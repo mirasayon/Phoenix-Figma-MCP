@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "figma-mcp-mh": {
+      "command": "npx",
+      "args": ["tsx", "src/server.ts"]
+    }
+  }
+}

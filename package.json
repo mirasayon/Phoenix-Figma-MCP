@@ -1,0 +1,28 @@
+{
+  "name": "figma-mcp-mh",
+  "description": "Figma MCP server for Cursor: read and write the open Figma file via a local WebSocket plugin bridge (no REST API, no token, no rate limits).",
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "socket": "node ./src/socket.ts",
+    "start": "node ./src/server.ts",
+    "dev": "node --watch ./src/server.ts",
+    "typecheck": "tsc --noEmit",
+    "verify": "npm run typecheck && node scripts/relay-smoke.mjs && node scripts/mcp-smoke.mjs"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.30.0",
+    "uuid": "^14.0.2",
+    "ws": "^8.21.3",
+    "zod": "^4.5.4"
+  },
+  "devDependencies": {
+    "@types/node": "^26.4.1",
+    "@types/uuid": "^11.0.0",
+    "@types/ws": "^8.18.1",
+    "typescript": "^7.0.2"
+  },
+  "engines": {
+    "node": ">=24"
+  }
+}
