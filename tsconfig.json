@@ -1,6 +1,6 @@
 {
   "compilerOptions": {
-    "target": "ES2022",
+    "target": "esnext",
     "module": "NodeNext",
     "moduleResolution": "NodeNext",
     "esModuleInterop": true,
@@ -9,7 +9,7 @@
     "forceConsistentCasingInFileNames": true,
     "noEmit": true,
     "rootDir": "src",
-    "lib": ["ES2022"],
+    "lib": ["ESNext"],
     "types": ["node"]
   },
   "include": ["src/**/*.ts"],
