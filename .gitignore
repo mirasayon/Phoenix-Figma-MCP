@@ -4,3 +4,4 @@ node_modules/
 dist/
 docs/
 .DS_Store
+repomix-output.xml
