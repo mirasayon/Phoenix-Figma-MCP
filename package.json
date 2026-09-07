@@ -7,7 +7,9 @@
     "socket": "node ./src/socket.ts",
     "start": "node ./src/server.ts",
     "dev": "node --watch ./src/server.ts",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "tsc --noEmit", "format": "prettier . --write",
+    "mix": "rimraf ./repomix-output.xml && repomix",
+    "format:check": "prettier . --check",
     "verify": "npm run typecheck && node scripts/relay-smoke.mjs && node scripts/mcp-smoke.mjs"
   },
   "dependencies": {
@@ -20,6 +22,7 @@
     "@types/node": "^26.4.1",
     "@types/uuid": "^11.0.0",
     "@types/ws": "^8.18.1",
+    "prettier": "^3.9.6",
     "typescript": "^7.0.2"
   },
   "engines": {
