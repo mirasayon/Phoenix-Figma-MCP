@@ -5,9 +5,9 @@ import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js";
 
 const transport = new StdioClientTransport({
-  command: "npx",
-  args: ["tsx", "src/server.ts"],
-  env: { ...process.env },
+  command: "node",
+  args: ["./src/server.ts"],
+  env:  { ...process.env },
 });
 
 const client = new Client({ name: "smoke", version: "1.0.0" });

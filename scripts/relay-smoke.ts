@@ -10,13 +10,13 @@ const PORT = 3055;
 const CHANNEL = "smoke-test";
 const URL = `ws://localhost:${PORT}`;
 
-const relay = spawn("npx", ["tsx", "src/socket.ts"], {
+const relay = spawn("node", ["./src/socket.ts"], {
   stdio: ["ignore", "pipe", "pipe"],
 });
 relay.stdout.on("data", () => {});
 relay.stderr.on("data", (d) => process.stderr.write(`[relay] ${d}`));
 
-function fail(msg) {
+function fail(msg: string) {
   console.error("FAIL:", msg);
   relay.kill();
   process.exit(1);
@@ -24,7 +24,7 @@ function fail(msg) {
 
 const timer = setTimeout(() => fail("timed out after 10s"), 10_000);
 
-function waitOpen(ws) {
+function waitOpen(ws : WebSocket): Promise<void> {
   return new Promise((res) => ws.once("open", res));
 }
 
@@ -72,7 +72,7 @@ peerA.send(
   }),
 );
 
-const result = await resultP;
+const result: any = await resultP;
 clearTimeout(timer);
 if (result && result.ok && result.echoed === "create_frame") {
   console.log("PASS: relay round-trip ok ->", JSON.stringify(result));

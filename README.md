@@ -59,8 +59,8 @@ Add to `~/.cursor/mcp.json`. Use an **absolute path** to `src/server.ts`:
 {
   "mcpServers": {
     "figma-mcp-mh": {
-      "command": "npx",
-      "args": ["tsx", "/absolute/path/to/figma-mcp/src/server.ts"]
+      "command": "node",
+      "args": ["/absolute/path/to/figma-mcp/src/server.ts"]
     }
   }
 }
@@ -110,7 +110,7 @@ All tools operate on **whatever file is open in Figma Desktop right now**.
 ```
 Cursor (MCP host)
    stdio / JSON-RPC
-MCP server  (src/server.ts, Node + tsx)
+MCP server  (./src/server.ts, Node)
    WebSocket client  ->  Relay (src/socket.ts) <-> Figma plugin  (read + write the open file)
 ```
 

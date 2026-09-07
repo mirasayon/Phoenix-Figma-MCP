@@ -359,7 +359,7 @@
           <ol>
             <li>
               Add the MCP server to Cursor (<code>mcp.json</code> →
-              <code>npx tsx …/src/server.ts</code>)
+              <code>node …/src/server.ts</code>)
             </li>
             <li>Run <code>npm run socket</code> in a terminal from the figma-mcp folder</li>
             <li>Click Connect here (default port 3055, channel <code>cursor-figma</code>)</li>
@@ -807,8 +807,8 @@
         const mcpConfig = {
           mcpServers: {
             "figma-mcp-mh": {
-              command: "npx",
-              args: ["tsx", "/absolute/path/to/figma-mcp/src/server.ts"],
+              command: "node",
+              args: ["/absolute/path/to/figma-mcp/src/server.ts"],
             },
           },
         };
