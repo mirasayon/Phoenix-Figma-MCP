@@ -396,6 +396,9 @@ async function getNodeInfo(nodeId) {
   if (!node) {
     throw new Error(`Node not found with ID: ${nodeId}`);
   }
+  if (node.type === "DOCUMENT") {
+    throw new Error(`Document node cannot be exported: ${nodeId}`);
+  }
 
   const response = await node.exportAsync({
     format: "JSON_REST_V1",
@@ -415,6 +418,9 @@ async function getNodesInfo(nodeIds) {
     // Export all valid nodes in parallel
     const responses = await Promise.all(
       validNodes.map(async (node) => {
+        if (node.type === "DOCUMENT") {
+          throw new Error(`Document node cannot be exported: ${node.id}`);
+        }
         const response = await node.exportAsync({
           format: "JSON_REST_V1",
         });
@@ -636,6 +642,9 @@ async function readMyDesign() {
     // Export all valid nodes in parallel
     const responses = await Promise.all(
       validNodes.map(async (node) => {
+        if (node.type === "DOCUMENT") {
+          throw new Error(`Document node cannot be exported: ${node.id}`);
+        }
         const response = await node.exportAsync({
           format: "JSON_REST_V1",
         });
@@ -670,7 +679,7 @@ async function createRectangle(params) {
     if (!("appendChild" in parentNode)) {
       throw new Error(`Parent node does not support children: ${parentId}`);
     }
-    parentNode.appendChild(rect);
+    (parentNode as ChildrenMixin).appendChild(rect);
   } else {
     figma.currentPage.appendChild(rect);
   }
@@ -741,7 +750,7 @@ async function createFrame(params) {
 
   // Set fill color if provided
   if (fillColor) {
-    const paintStyle = {
+    const paintStyle: SolidPaint = {
       type: "SOLID",
       color: {
         r: parseFloat(fillColor.r) || 0,
@@ -755,7 +764,7 @@ async function createFrame(params) {
 
   // Set stroke color and weight if provided
   if (strokeColor) {
-    const strokeStyle = {
+    const strokeStyle: SolidPaint = {
       type: "SOLID",
       color: {
         r: parseFloat(strokeColor.r) || 0,
@@ -781,7 +790,7 @@ async function createFrame(params) {
     if (!("appendChild" in parentNode)) {
       throw new Error(`Parent node does not support children: ${parentId}`);
     }
-    parentNode.appendChild(frame);
+    (parentNode as ChildrenMixin).appendChild(frame);
   } else {
     figma.currentPage.appendChild(frame);
   }
@@ -894,7 +903,7 @@ async function createText(params) {
   }
 
   // Set text color
-  const paintStyle = {
+  const paintStyle: SolidPaint = {
     type: "SOLID",
     color: {
       r: parseFloat(fontColor.r) || 0,
@@ -914,7 +923,7 @@ async function createText(params) {
     if (!("appendChild" in parentNode)) {
       throw new Error(`Parent node does not support children: ${parentId}`);
     }
-    parentNode.appendChild(textNode);
+    (parentNode as ChildrenMixin).appendChild(textNode);
   } else {
     figma.currentPage.appendChild(textNode);
   }
@@ -968,7 +977,7 @@ async function setFillColor(params) {
   };
 
   // Set fill
-  const paintStyle = {
+  const paintStyle: SolidPaint = {
     type: "SOLID",
     color: {
       r: Number(rgbColor.r),
@@ -1018,7 +1027,7 @@ async function setStrokeColor(params) {
   };
 
   // Set stroke
-  const paintStyle = {
+  const paintStyle: SolidPaint = {
     type: "SOLID",
     color: {
       r: rgbColor.r,
@@ -1330,8 +1339,8 @@ async function exportNodeAsImage(params) {
   }
 
   try {
-    const settings = {
-      format: format,
+    const settings: ExportSettingsImage = {
+      format,
       constraint: { type: "SCALE", value: scale },
     };
 
@@ -1421,26 +1430,30 @@ async function setCornerRadius(params) {
     throw new Error(`Node not found with ID: ${nodeId}`);
   }
 
-  // Check if node supports corner radius
-  if (!("cornerRadius" in node)) {
-    throw new Error(`Node does not support corner radius: ${nodeId}`);
+  // ConnectorNode and ShapeWithTextNode expose cornerRadius as read-only.
+  if (
+    !("cornerRadius" in node) ||
+    node.type === "CONNECTOR" ||
+    node.type === "SHAPE_WITH_TEXT"
+  ) {
+    throw new Error(`Node does not support writable corner radius: ${nodeId}`);
   }
+
+  const cornerNode = node as BaseNode & CornerMixin;
 
   // If corners array is provided, set individual corner radii
   if (corners && Array.isArray(corners) && corners.length === 4) {
     if ("topLeftRadius" in node) {
-      // Node supports individual corner radii
-      if (corners[0]) node.topLeftRadius = radius;
-      if (corners[1]) node.topRightRadius = radius;
-      if (corners[2]) node.bottomRightRadius = radius;
-      if (corners[3]) node.bottomLeftRadius = radius;
+      const rectangleCornerNode = node as BaseNode & CornerMixin & RectangleCornerMixin;
+      if (corners[0]) rectangleCornerNode.topLeftRadius = radius;
+      if (corners[1]) rectangleCornerNode.topRightRadius = radius;
+      if (corners[2]) rectangleCornerNode.bottomRightRadius = radius;
+      if (corners[3]) rectangleCornerNode.bottomLeftRadius = radius;
     } else {
-      // Node only supports uniform corner radius
-      node.cornerRadius = radius;
+      cornerNode.cornerRadius = radius;
     }
   } else {
-    // Set uniform corner radius
-    node.cornerRadius = radius;
+    cornerNode.cornerRadius = radius;
   }
 
   return {
@@ -1716,8 +1729,11 @@ async function cloneNode(params) {
   if (!node) {
     throw new Error(`Node not found with ID: ${nodeId}`);
   }
+  if (node.type === "DOCUMENT" || node.type === "PAGE") {
+    throw new Error(`Node type ${node.type} cannot be cloned by this command`);
+  }
 
-  // Clone the node
+  // All remaining BaseNode variants are SceneNode variants and expose clone().
   const clone = node.clone();
 
   // Add the clone to the same parent as the original node first, so that
@@ -3225,23 +3241,23 @@ async function setInstanceOverrides(targetInstances, sourceResult) {
           for (const field of override.overriddenFields) {
             try {
               if (field === "componentProperties") {
-                // Apply component properties
-                if (sourceNode.componentProperties && overrideNode.componentProperties) {
-                  const properties = {};
+                if (sourceNode.type === "INSTANCE" && overrideNode.type === "INSTANCE") {
+                  const properties: Record<string, string | boolean> = {};
                   for (const key in sourceNode.componentProperties) {
-                    // if INSTANCE_SWAP use id, otherwise use value
-                    if (sourceNode.componentProperties[key].type === "INSTANCE_SWAP") {
-                      properties[key] = sourceNode.componentProperties[key].value;
-                    } else {
-                      properties[key] = sourceNode.componentProperties[key].value;
-                    }
+                    properties[key] = sourceNode.componentProperties[key].value;
                   }
                   overrideNode.setProperties(properties);
                   fieldApplied = true;
                 }
-              } else if (field === "characters" && overrideNode.type === "TEXT") {
-                // For text nodes, need to load fonts first
-                await figma.loadFontAsync(overrideNode.fontName);
+              } else if (
+                field === "characters" &&
+                sourceNode.type === "TEXT" &&
+                overrideNode.type === "TEXT"
+              ) {
+                // For text nodes, need to load a concrete font first.
+                if (overrideNode.fontName !== figma.mixed) {
+                  await figma.loadFontAsync(overrideNode.fontName);
+                }
                 overrideNode.characters = sourceNode.characters;
                 fieldApplied = true;
               } else if (field in overrideNode) {
@@ -3481,7 +3497,10 @@ async function setLayoutSizing(params) {
       throw new Error("HUG sizing is only valid on auto-layout frames and text nodes");
     }
     // FILL is only valid on auto-layout children
-    if (layoutSizingHorizontal === "FILL" && (!node.parent || node.parent.layoutMode === "NONE")) {
+    if (
+      layoutSizingHorizontal === "FILL" &&
+      (!node.parent || !("layoutMode" in node.parent) || node.parent.layoutMode === "NONE")
+    ) {
       throw new Error("FILL sizing is only valid on auto-layout children");
     }
     node.layoutSizingHorizontal = layoutSizingHorizontal;
@@ -3497,7 +3516,10 @@ async function setLayoutSizing(params) {
       throw new Error("HUG sizing is only valid on auto-layout frames and text nodes");
     }
     // FILL is only valid on auto-layout children
-    if (layoutSizingVertical === "FILL" && (!node.parent || node.parent.layoutMode === "NONE")) {
+    if (
+      layoutSizingVertical === "FILL" &&
+      (!node.parent || !("layoutMode" in node.parent) || node.parent.layoutMode === "NONE")
+    ) {
       throw new Error("FILL sizing is only valid on auto-layout children");
     }
     node.layoutSizingVertical = layoutSizingVertical;
@@ -3702,7 +3724,7 @@ async function createCursorNode(targetNodeId) {
     importedNode.resize(48, 48);
 
     const cursorNode = importedNode.findOne((node) => node.type === "VECTOR");
-    if (cursorNode) {
+    if (cursorNode?.type === "VECTOR") {
       cursorNode.fills = [
         {
           type: "SOLID",
@@ -3733,7 +3755,10 @@ async function createCursorNode(targetNodeId) {
     }
 
     // Append the cursor node to the parent node
-    parentNode.appendChild(importedNode);
+    if (!("appendChild" in parentNode)) {
+      throw new Error(`Parent node ${parentNode.id} does not support children`);
+    }
+    (parentNode as ChildrenMixin).appendChild(importedNode);
 
     // if the parentNode has auto-layout enabled, set the layoutPositioning to ABSOLUTE
     if ("layoutMode" in parentNode && parentNode.layoutMode !== "NONE") {
@@ -3741,20 +3766,16 @@ async function createCursorNode(targetNodeId) {
     }
 
     // Adjust the importedNode's position to the targetNode's position
-    if (targetNode.absoluteBoundingBox && parentNode.absoluteBoundingBox) {
-      // if the targetNode has absoluteBoundingBox, set the importedNode's absoluteBoundingBox to the targetNode's absoluteBoundingBox
-      console.log("targetNode.absoluteBoundingBox", targetNode.absoluteBoundingBox);
-      console.log("parentNode.absoluteBoundingBox", parentNode.absoluteBoundingBox);
-      importedNode.x =
-        targetNode.absoluteBoundingBox.x -
-        parentNode.absoluteBoundingBox.x +
-        targetNode.absoluteBoundingBox.width / 2 -
-        48 / 2;
-      importedNode.y =
-        targetNode.absoluteBoundingBox.y -
-        parentNode.absoluteBoundingBox.y +
-        targetNode.absoluteBoundingBox.height / 2 -
-        48 / 2;
+    const targetBounds =
+      "absoluteBoundingBox" in targetNode ? targetNode.absoluteBoundingBox : null;
+    const parentBounds =
+      "absoluteBoundingBox" in parentNode ? parentNode.absoluteBoundingBox : null;
+
+    if (targetBounds && parentBounds) {
+      console.log("targetNode.absoluteBoundingBox", targetBounds);
+      console.log("parentNode.absoluteBoundingBox", parentBounds);
+      importedNode.x = targetBounds.x - parentBounds.x + targetBounds.width / 2 - 48 / 2;
+      importedNode.y = targetBounds.y - parentBounds.y + targetBounds.height / 2 - 48 / 2;
     } else if (
       "x" in targetNode &&
       "y" in targetNode &&
@@ -3773,7 +3794,12 @@ async function createCursorNode(targetNodeId) {
       importedNode.y = targetNode.y + targetNode.height / 2 - 48 / 2;
     } else {
       // Fallback: Place at top-left of target if possible, otherwise at (0,0) relative to parent
-      if ("x" in targetNode && "y" in targetNode) {
+      if (
+        "x" in targetNode &&
+        "y" in targetNode &&
+        typeof targetNode.x === "number" &&
+        typeof targetNode.y === "number"
+      ) {
         console.log("Fallback to targetNode x/y");
         importedNode.x = targetNode.x;
         importedNode.y = targetNode.y;
@@ -3892,7 +3918,11 @@ async function createConnections(params) {
           // Try to load the necessary fonts
           try {
             // First check if default connector has font and use the same
-            if (defaultConnector.text && defaultConnector.text.fontName) {
+            if (
+              defaultConnector.text &&
+              defaultConnector.text.fontName &&
+              defaultConnector.text.fontName !== figma.mixed
+            ) {
               const fontName = defaultConnector.text.fontName;
               await figma.loadFontAsync(fontName);
               clonedConnector.text.fontName = fontName;
@@ -4003,8 +4033,11 @@ async function setFocus(params) {
   if (!node) {
     throw new Error(`Node with ID ${params.nodeId} not found`);
   }
+  if (node.type === "DOCUMENT" || node.type === "PAGE") {
+    throw new Error(`Node type ${node.type} cannot be selected`);
+  }
 
-  // Set selection to the node
+  // The remaining variants are SceneNode variants.
   figma.currentPage.selection = [node];
 
   // Scroll and zoom to show the node in viewport
