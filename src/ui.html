@@ -1,12 +1,12 @@
-<!DOCTYPE html>
+<!doctype html>
 <html>
   <head>
     <meta charset="utf-8" />
     <title>figma mcp</title>
     <style>
       body {
-        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
-          Helvetica, Arial, sans-serif;
+        font-family:
+          -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
         margin: 0;
         padding: 20px;
         color: #e0e0e0;
@@ -279,31 +279,17 @@
       <div id="content-connection" class="tab-content active">
         <div class="section">
           <div style="margin-bottom: 16px">
-            <button id="btn-connect" class="primary" style="width: 100%">
-              Connect
-            </button>
+            <button id="btn-connect" class="primary" style="width: 100%">Connect</button>
           </div>
 
           <div id="port-container">
             <label for="port">WebSocket Server Port</label>
-            <input
-              type="number"
-              id="port"
-              placeholder="3055"
-              value="3055"
-              min="1024"
-              max="65535"
-            />
+            <input type="number" id="port" placeholder="3055" value="3055" min="1024" max="65535" />
           </div>
 
           <div id="channel-container">
             <label for="channel">Channel</label>
-            <input
-              type="text"
-              id="channel"
-              placeholder="cursor-figma"
-              value="cursor-figma"
-            />
+            <input type="text" id="channel" placeholder="cursor-figma" value="cursor-figma" />
           </div>
         </div>
 
@@ -313,10 +299,7 @@
 
         <div id="mcp-config" class="section hidden">
           <h2>MCP Configuration</h2>
-          <p>
-            Copy this configuration to your <code>mcp.json</code> file in
-            Cursor:
-          </p>
+          <p>Copy this configuration to your <code>mcp.json</code> file in Cursor:</p>
           <textarea
             id="mcp-json"
             rows="5"
@@ -339,14 +322,7 @@
         <div id="progress-container" class="section hidden">
           <h2>Operation Progress</h2>
           <div id="progress-message">No operation in progress</div>
-          <div
-            style="
-              width: 100%;
-              background-color: #444;
-              border-radius: 4px;
-              margin-top: 8px;
-            "
-          >
+          <div style="width: 100%; background-color: #444; border-radius: 4px; margin-top: 8px">
             <div
               id="progress-bar"
               style="
@@ -359,12 +335,7 @@
             ></div>
           </div>
           <div
-            style="
-              display: flex;
-              justify-content: space-between;
-              margin-top: 4px;
-              font-size: 12px;
-            "
+            style="display: flex; justify-content: space-between; margin-top: 4px; font-size: 12px"
           >
             <div id="progress-status">Not started</div>
             <div id="progress-percentage">0%</div>
@@ -376,22 +347,26 @@
         <div class="section">
           <h2>About Figma MCP</h2>
           <p>
-            Connects Cursor to the file open in Figma Desktop through a local
-            WebSocket relay — read the document tree, export nodes, and create or
-            edit design elements from your editor. No Figma API token required.
-            <a
-              class="link"
-              onclick="window.open(`https://github.com/mhue26/figma-mcp`, '_blank')"
+            Connects Cursor to the file open in Figma Desktop through a local WebSocket relay — read
+            the document tree, export nodes, and create or edit design elements from your editor. No
+            Figma API token required.
+            <a class="link" onclick="window.open(`https://github.com/mhue26/figma-mcp`, '_blank')"
               >GitHub</a
             >
           </p>
 
           <h2>How to Use</h2>
           <ol>
-            <li>Add the MCP server to Cursor (<code>mcp.json</code> → <code>npx tsx …/src/server.ts</code>)</li>
+            <li>
+              Add the MCP server to Cursor (<code>mcp.json</code> →
+              <code>npx tsx …/src/server.ts</code>)
+            </li>
             <li>Run <code>npm run socket</code> in a terminal from the figma-mcp folder</li>
             <li>Click Connect here (default port 3055, channel <code>cursor-figma</code>)</li>
-            <li>Just start using Figma tools in Cursor — the server auto-joins the same channel. Only call <code>join_channel</code> if you changed the channel above.</li>
+            <li>
+              Just start using Figma tools in Cursor — the server auto-joins the same channel. Only
+              call <code>join_channel</code> if you changed the channel above.
+            </li>
           </ol>
         </div>
       </div>
@@ -433,9 +408,7 @@
 
         let statusMessage =
           message ||
-          (isConnected
-            ? "Connected to Cursor MCP server"
-            : "Not connected to Cursor MCP server");
+          (isConnected ? "Connected to Cursor MCP server" : "Not connected to Cursor MCP server");
 
         // Add instructions for localhost when disconnected
         if (!isConnected) {
@@ -443,9 +416,7 @@
         }
 
         connectionStatus.innerHTML = statusMessage;
-        connectionStatus.className = `status ${
-          isConnected ? "connected" : "disconnected"
-        }`;
+        connectionStatus.className = `status ${isConnected ? "connected" : "disconnected"}`;
 
         // Update connect button text and style based on connection state
         connectButton.textContent = isConnected ? "Disconnect" : "Connect";
@@ -480,8 +451,7 @@
             // Phase 0: default to the shared channel the MCP server auto-joins.
             // Still editable for isolated/parallel sessions; generateChannelName()
             // remains available below if a random channel is ever wanted.
-            const channelName =
-              (channelInput && channelInput.value.trim()) || DEFAULT_CHANNEL;
+            const channelName = (channelInput && channelInput.value.trim()) || DEFAULT_CHANNEL;
             console.log("Joining channel:", channelName);
             state.channel = channelName;
 
@@ -490,7 +460,7 @@
               JSON.stringify({
                 type: "join",
                 channel: channelName.trim(),
-              })
+              }),
             );
           };
 
@@ -506,7 +476,7 @@
                   const channelName = data.channel;
                   updateConnectionStatus(
                     true,
-                    `Connected to server in channel: <strong>${channelName}</strong>`
+                    `Connected to server in channel: <strong>${channelName}</strong>`,
                   );
 
                   // Notify the plugin code
@@ -517,7 +487,7 @@
                         message: `Connected to Cursor MCP server on port ${port} in channel: ${channelName}`,
                       },
                     },
-                    "*"
+                    "*",
                   );
                 }
               } else if (data.type === "error") {
@@ -546,10 +516,7 @@
           };
         } catch (error) {
           console.error("Connection error:", error);
-          updateConnectionStatus(
-            false,
-            `Connection error: ${error.message || "Unknown error"}`
-          );
+          updateConnectionStatus(false, `Connection error: ${error.message || "Unknown error"}`);
         }
       }
 
@@ -596,14 +563,11 @@
                   params: data.params,
                 },
               },
-              "*"
+              "*",
             );
           } catch (error) {
             // Send error back to WebSocket
-            sendErrorResponse(
-              data.id,
-              error.message || "Error executing command"
-            );
+            sendErrorResponse(data.id, error.message || "Error executing command");
           }
         }
       }
@@ -629,7 +593,7 @@
                 command,
                 params,
               },
-            })
+            }),
           );
 
           // Set timeout to reject the promise after 30 seconds
@@ -658,7 +622,7 @@
               id,
               result,
             },
-          })
+          }),
         );
       }
 
@@ -679,15 +643,13 @@
               error: errorMessage,
               result: {},
             },
-          })
+          }),
         );
       }
 
       // Helper to generate unique IDs
       function generateId() {
-        return (
-          Date.now().toString(36) + Math.random().toString(36).substr(2, 5)
-        );
+        return Date.now().toString(36) + Math.random().toString(36).substr(2, 5);
       }
 
       // Add this function after the generateId() function
@@ -695,9 +657,7 @@
         const characters = "abcdefghijklmnopqrstuvwxyz0123456789";
         let result = "";
         for (let i = 0; i < 8; i++) {
-          result += characters.charAt(
-            Math.floor(Math.random() * characters.length)
-          );
+          result += characters.charAt(Math.floor(Math.random() * characters.length));
         }
         return result;
       }
@@ -739,8 +699,7 @@
         progressPercentage.textContent = `${progress}%`;
 
         // Update message
-        progressMessage.textContent =
-          progressData.message || "Operation in progress";
+        progressMessage.textContent = progressData.message || "Operation in progress";
 
         // Update status text based on operation state
         if (progressData.status === "started") {
@@ -783,7 +742,7 @@
               type: "progress_update",
               data: progressData,
             },
-          })
+          }),
         );
       }
 
@@ -854,11 +813,7 @@
           },
         };
 
-        document.getElementById("mcp-json").value = JSON.stringify(
-          mcpConfig,
-          null,
-          2
-        );
+        document.getElementById("mcp-json").value = JSON.stringify(mcpConfig, null, 2);
       }
     </script>
   </body>

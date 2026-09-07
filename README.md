@@ -11,12 +11,12 @@ Based on [`sonnylazuardi/cursor-talk-to-figma-mcp`](https://github.com/sonnylazu
 
 ## Desktop only — not browser
 
-| | Figma Desktop | Figma in browser |
-|---|---|---|
-| Import a local dev plugin | Yes | No |
-| Connect to `ws://localhost:3055` | Yes | No |
-| Read/write via Plugin API | Yes | No |
-| Works with this MCP | **Yes** | **No** |
+|                                  | Figma Desktop | Figma in browser |
+| -------------------------------- | ------------- | ---------------- |
+| Import a local dev plugin        | Yes           | No               |
+| Connect to `ws://localhost:3055` | Yes           | No               |
+| Read/write via Plugin API        | Yes           | No               |
+| Works with this MCP              | **Yes**       | **No**           |
 
 You need Figma Desktop because this workflow imports a **development plugin** from `manifest.json` and connects it to a relay running on your machine. Browser Figma cannot do either of those things.
 
@@ -31,11 +31,11 @@ relay running  +  file open        +  MCP server enabled
                   plugin connected
 ```
 
-| Piece | How to start it |
-|---|---|
-| **Relay** | `npm run socket` in a terminal (keep it open) |
+| Piece                   | How to start it                                       |
+| ----------------------- | ----------------------------------------------------- |
+| **Relay**               | `npm run socket` in a terminal (keep it open)         |
 | **Figma file + plugin** | Open a file in Desktop, run the plugin, click Connect |
-| **MCP server** | Started automatically by Cursor from `mcp.json` |
+| **MCP server**          | Started automatically by Cursor from `mcp.json`       |
 
 The plugin and the MCP server both default to the shared channel `cursor-figma`, so
 there is **no manual `join_channel` step** in the common case. If any of the three
@@ -147,15 +147,15 @@ All tools need the relay running and the plugin connected. The server auto-joins
 
 ### Read tools
 
-| Tool | Purpose |
-|---|---|
-| `get_document_info` | Current document/page overview |
-| `get_selection` | Currently selected nodes |
-| `get_node_info` / `get_nodes_info` | One or more nodes by ID |
-| `read_my_design` | The current selection in detail |
-| `get_local_components` | Components defined in the open file |
-| `get_styles` | Color/text/effect/grid styles |
-| `export_node_as_image` | Render a node to PNG (returns base64 image bytes) |
+| Tool                               | Purpose                                           |
+| ---------------------------------- | ------------------------------------------------- |
+| `get_document_info`                | Current document/page overview                    |
+| `get_selection`                    | Currently selected nodes                          |
+| `get_node_info` / `get_nodes_info` | One or more nodes by ID                           |
+| `read_my_design`                   | The current selection in detail                   |
+| `get_local_components`             | Components defined in the open file               |
+| `get_styles`                       | Color/text/effect/grid styles                     |
+| `export_node_as_image`             | Render a node to PNG (returns base64 image bytes) |
 
 ### Write tools
 
@@ -168,25 +168,30 @@ All tools need the relay running and the plugin connected. The server auto-joins
 ## Troubleshooting
 
 **Tools hang or time out**
+
 - Is `npm run socket` still running?
 - Does the plugin show "Connected"?
 - Does the plugin's channel match the server's (both default to `cursor-figma`)? If you changed the channel in the plugin, call `join_channel` with that exact name.
 - Is the plugin panel still open?
 
 **"Not connected to Figma" / connection errors**
+
 - Start the relay first, then connect the plugin.
 - Check nothing else is blocking port 3055.
 
 **MCP server not appearing in Cursor**
+
 - Confirm `~/.cursor/mcp.json` uses an absolute path to `src/server.ts`.
 - Restart Cursor or reload MCP servers.
 - Check MCP logs in Cursor settings.
 
 **Plugin not found in Figma**
+
 - Re-import from manifest: **Plugins → Development → Import plugin from manifest…**
 - Development plugins live under **Plugins → Development**, not the community list.
 
 **Wrong or empty data**
+
 - Switch to the correct file in Figma Desktop — reads only see the open file.
 - There is no "read any file by URL/key" in this build.
 

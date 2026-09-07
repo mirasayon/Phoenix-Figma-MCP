@@ -58,5 +58,8 @@ if (leaked.length) {
   console.error("FAIL: REST tools still registered:", leaked.join(", "));
   process.exit(1);
 }
-console.log(`PASS: ${tools.length} plugin tools registered, REST tools removed. Sample:`, expected.join(", "));
+console.log(
+  `PASS: ${tools.length} plugin tools registered, REST tools removed. Sample:`,
+  expected.join(", "),
+);
 process.exit(0);

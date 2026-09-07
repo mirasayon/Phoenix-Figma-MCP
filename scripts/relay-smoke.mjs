@@ -47,7 +47,7 @@ peerB.on("message", (raw) => {
         type: "message",
         channel: CHANNEL,
         message: { id: data.message.id, result: { ok: true, echoed: data.message.command } },
-      })
+      }),
     );
   }
 });
@@ -69,7 +69,7 @@ peerA.send(
     channel: CHANNEL,
     id: reqId,
     message: { id: reqId, command: "create_frame", params: {} },
-  })
+  }),
 );
 
 const result = await resultP;

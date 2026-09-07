@@ -37,15 +37,15 @@ Relay :3055
 
 ## Phases
 
-| Phase | What |
-|---|---|
+| Phase  | What                                                                                                                                         |
+| ------ | -------------------------------------------------------------------------------------------------------------------------------------------- |
 | **0a** | Hardcode `DEFAULT_CHANNEL` / `DEFAULT_PORT`. Server auto-joins in `on('open')`. Plugin defaults to same channel. Update README + smoke test. |
-| **0b** | Optional `~/.figma-mcp/state.json` override (server reads; plugin shows value in UI). |
-| **0c** | Fix stale `updateMcpConfig()` snippet in plugin UI. |
-| **1** | Tauri skeleton: tray, popover, spawn/restart relay, log output. |
-| **2** | Live status checklist, copy buttons, tray color (green/amber/red). |
-| **3** | First-run wizard: Cursor `mcp.json`, plugin import, test round-trip. |
-| **4** | Settings, code-sign, DMG, optional auto-update. |
+| **0b** | Optional `~/.figma-mcp/state.json` override (server reads; plugin shows value in UI).                                                        |
+| **0c** | Fix stale `updateMcpConfig()` snippet in plugin UI.                                                                                          |
+| **1**  | Tauri skeleton: tray, popover, spawn/restart relay, log output.                                                                              |
+| **2**  | Live status checklist, copy buttons, tray color (green/amber/red).                                                                           |
+| **3**  | First-run wizard: Cursor `mcp.json`, plugin import, test round-trip.                                                                         |
+| **4**  | Settings, code-sign, DMG, optional auto-update.                                                                                              |
 
 **Phase 0 tradeoffs:** Relay still manual. Shared channel can cross-talk on one machine (use custom channel to isolate). No relay auth on localhost.
 

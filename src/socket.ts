@@ -7,11 +7,7 @@ const PORT = Number(process.env.WS_PORT ?? 3055);
 // Store clients by channel
 const channels = new Map<string, Set<WebSocket>>();
 
-function broadcastToChannel(
-  channelName: string,
-  sender: WebSocket | null,
-  payload: unknown
-) {
+function broadcastToChannel(channelName: string, sender: WebSocket | null, payload: unknown) {
   const clients = channels.get(channelName);
   if (!clients) return 0;
   let count = 0;
@@ -44,9 +40,7 @@ wss.on("connection", (ws) => {
       if (data.type === "join") {
         const channelName = data.channel;
         if (!channelName || typeof channelName !== "string") {
-          ws.send(
-            JSON.stringify({ type: "error", message: "Channel name is required" })
-          );
+          ws.send(JSON.stringify({ type: "error", message: "Channel name is required" }));
           return;
         }
 
@@ -58,7 +52,7 @@ wss.on("connection", (ws) => {
         channelClients.add(ws);
 
         console.log(
-          `\n\u2713 Client joined channel "${channelName}" (${channelClients.size} total clients)`
+          `\n\u2713 Client joined channel "${channelName}" (${channelClients.size} total clients)`,
         );
 
         // Notify client they joined successfully
@@ -67,7 +61,7 @@ wss.on("connection", (ws) => {
             type: "system",
             message: `Joined channel: ${channelName}`,
             channel: channelName,
-          })
+          }),
         );
 
         // Acknowledge the join request so the peer's pending request resolves
@@ -79,7 +73,7 @@ wss.on("connection", (ws) => {
               result: "Connected to channel: " + channelName,
             },
             channel: channelName,
-          })
+          }),
         );
 
         // Notify other clients in the channel
@@ -95,9 +89,7 @@ wss.on("connection", (ws) => {
       if (data.type === "message") {
         const channelName = data.channel;
         if (!channelName || typeof channelName !== "string") {
-          ws.send(
-            JSON.stringify({ type: "error", message: "Channel name is required" })
-          );
+          ws.send(JSON.stringify({ type: "error", message: "Channel name is required" }));
           return;
         }
 
@@ -107,7 +99,7 @@ wss.on("connection", (ws) => {
             JSON.stringify({
               type: "error",
               message: "You must join the channel first",
-            })
+            }),
           );
           return;
         }
@@ -121,12 +113,10 @@ wss.on("connection", (ws) => {
 
         if (broadcastCount === 0) {
           console.log(
-            `\u26a0\ufe0f  No other clients in channel "${channelName}" to receive message!`
+            `\u26a0\ufe0f  No other clients in channel "${channelName}" to receive message!`,
           );
         } else {
-          console.log(
-            `\u2713 Broadcast to ${broadcastCount} peer(s) in channel "${channelName}"`
-          );
+          console.log(`\u2713 Broadcast to ${broadcastCount} peer(s) in channel "${channelName}"`);
         }
         return;
       }
