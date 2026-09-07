@@ -7,11 +7,13 @@
     "socket": "node ./src/socket.ts",
     "start": "node ./src/server.ts",
     "dev": "node --watch ./src/server.ts",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "tsc --noEmit && tsc -p tsconfig.plugin.json --noEmit",
     "format": "prettier . --write",
     "mix": "rimraf ./repomix-output.xml && repomix",
     "format:check": "prettier . --check",
-    "verify": "npm run typecheck && node ./src/scripts/relay-smoke.ts && node ./src/scripts/mcp-smoke.ts"
+    "verify": "npm run build:plugin && npm run typecheck && node ./src/scripts/relay-smoke.ts && node ./src/scripts/mcp-smoke.ts",
+    "build:plugin": "tsc -p tsconfig.plugin.json",
+    "dev:plugin": "tsc -p tsconfig.plugin.json --watch"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.30.0",
@@ -20,6 +22,7 @@
     "zod": "^4.5.4"
   },
   "devDependencies": {
+    "@figma/plugin-typings": "^1.138.0",
     "@types/node": "^26.4.1",
     "@types/uuid": "^11.0.0",
     "@types/ws": "^8.18.1",

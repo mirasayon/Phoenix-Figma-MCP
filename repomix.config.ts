@@ -28,6 +28,7 @@ export default defineConfig({
       "./.git",
       "./dist/**",
       "./build/**",
+      "./src/code.js",
       "*.tsbuildinfo",
     ],
   },

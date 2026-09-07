@@ -1,3 +1,5 @@
+/// <reference types="@figma/plugin-typings" />
+
 // This is the main code file for the Cursor MCP Figma plugin
 // It handles Figma API commands
 
@@ -15,9 +17,9 @@ async function sendProgressUpdate(
   totalItems,
   processedItems,
   message,
-  payload = null,
+  payload: Record<string, unknown> | null = null,
 ) {
-  const update = {
+  const update: Record<string, unknown> = {
     type: "command_progress",
     commandId,
     commandType,
@@ -309,7 +311,7 @@ function filterFigmaNode(node) {
     return null;
   }
 
-  var filtered = {
+  const filtered: Record<string, any> = {
     id: node.id,
     name: node.name,
     type: node.type,
@@ -865,10 +867,10 @@ async function createText(params) {
   }
 
   textNode.fontName = appliedFont;
-  textNode.fontSize = parseInt(fontSize);
+  textNode.fontSize = Number(fontSize);
 
   if (lineHeight !== undefined && lineHeight !== null) {
-    textNode.lineHeight = { value: parseFloat(lineHeight), unit: "PIXELS" };
+    textNode.lineHeight = { value: Number(lineHeight), unit: "PIXELS" };
   }
   if (textAlignHorizontal) {
     textNode.textAlignHorizontal = textAlignHorizontal;
@@ -969,11 +971,11 @@ async function setFillColor(params) {
   const paintStyle = {
     type: "SOLID",
     color: {
-      r: parseFloat(rgbColor.r),
-      g: parseFloat(rgbColor.g),
-      b: parseFloat(rgbColor.b),
+      r: Number(rgbColor.r),
+      g: Number(rgbColor.g),
+      b: Number(rgbColor.b),
     },
-    opacity: parseFloat(rgbColor.a),
+    opacity: Number(rgbColor.a),
   };
 
   console.log("paintStyle", paintStyle);
@@ -1312,7 +1314,7 @@ async function createComponentInstance(params) {
 async function exportNodeAsImage(params) {
   const { nodeId, scale = 1 } = params || {};
 
-  const format = "PNG";
+  const format = "PNG" as const;
 
   if (!nodeId) {
     throw new Error("Missing nodeId parameter");
@@ -1335,23 +1337,7 @@ async function exportNodeAsImage(params) {
 
     const bytes = await node.exportAsync(settings);
 
-    let mimeType;
-    switch (format) {
-      case "PNG":
-        mimeType = "image/png";
-        break;
-      case "JPG":
-        mimeType = "image/jpeg";
-        break;
-      case "SVG":
-        mimeType = "image/svg+xml";
-        break;
-      case "PDF":
-        mimeType = "application/pdf";
-        break;
-      default:
-        mimeType = "application/octet-stream";
-    }
+    const mimeType = "image/png";
 
     // Proper way to convert Uint8Array to base64
     const base64 = customBase64Encode(bytes);
@@ -1542,7 +1528,7 @@ function uniqBy(arr, predicate) {
       .values(),
   ];
 }
-const setCharacters = async (node, characters, options) => {
+const setCharacters = async (node, characters, options = undefined) => {
   const fallbackFont = (options && options.fallbackFont) || {
     family: "Inter",
     style: "Regular",
@@ -1556,7 +1542,9 @@ const setCharacters = async (node, characters, options) => {
           const key = `${charFont.family}::${charFont.style}`;
           fontHashTree[key] = fontHashTree[key] ? fontHashTree[key] + 1 : 1;
         }
-        const prevailedTreeItem = Object.entries(fontHashTree).sort((a, b) => b[1] - a[1])[0];
+        const prevailedTreeItem = Object.entries(fontHashTree as Record<string, number>).sort(
+          (a, b) => b[1] - a[1],
+        )[0];
         const [family, style] = prevailedTreeItem[0].split("::");
         const prevailedFont = {
           family,
@@ -2486,7 +2474,7 @@ async function getAnnotations(params) {
       };
       await collect(node);
 
-      const result = {
+      const result: Record<string, unknown> = {
         nodeId: node.id,
         name: node.name,
         annotations: mergedAnnotations,
@@ -2518,7 +2506,7 @@ async function getAnnotations(params) {
       // Start from current page
       await processNode(figma.currentPage);
 
-      const result = {
+      const result: Record<string, unknown> = {
         annotatedNodes: annotations,
       };
 
@@ -2581,7 +2569,7 @@ async function setAnnotation(params) {
     }
 
     // Create the annotation object
-    const newAnnotation = {
+    const newAnnotation: Record<string, unknown> = {
       labelMarkdown,
     };
 
@@ -3934,8 +3922,8 @@ async function createConnections(params) {
           // Continue with connection even if text setting fails
           results.push({
             id: clonedConnector.id,
-            startNodeId: startNodeId,
-            endNodeId: endNodeId,
+            startNodeId: originalStartId,
+            endNodeId: originalEndId,
             text: "",
             textError: textError.message,
           });

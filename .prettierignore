@@ -10,3 +10,6 @@ pnpm-lock.yaml
 yarn.lock
 
 next-env.d.ts
+
+# Generated Figma plugin runtime
+src/code.js
