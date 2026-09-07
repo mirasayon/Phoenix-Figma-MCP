@@ -2,7 +2,7 @@
   "mcpServers": {
     "figma-mcp-mh": {
       "command": "node",
-      "args": ["src/server.ts"]
+      "args": ["./src/server.ts"]
     }
   }
 }
