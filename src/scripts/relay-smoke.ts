@@ -24,7 +24,7 @@ function fail(msg: string) {
 
 const timer = setTimeout(() => fail("timed out after 10s"), 10_000);
 
-function waitOpen(ws : WebSocket): Promise<void> {
+function waitOpen(ws: WebSocket): Promise<void> {
   return new Promise((res) => ws.once("open", res));
 }
 

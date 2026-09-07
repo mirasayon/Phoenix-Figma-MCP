@@ -1435,11 +1435,7 @@ async function setCornerRadius(params) {
   }
 
   // ConnectorNode and ShapeWithTextNode expose cornerRadius as read-only.
-  if (
-    !("cornerRadius" in node) ||
-    node.type === "CONNECTOR" ||
-    node.type === "SHAPE_WITH_TEXT"
-  ) {
+  if (!("cornerRadius" in node) || node.type === "CONNECTOR" || node.type === "SHAPE_WITH_TEXT") {
     throw new Error(`Node does not support writable corner radius: ${nodeId}`);
   }
 
