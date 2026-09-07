@@ -8,6 +8,10 @@ const state = {
   serverPort: 3055, // Default port
 };
 
+type FigmaRestExportResponse = {
+  document: Record<string, unknown>;
+};
+
 // Helper function for progress updates
 async function sendProgressUpdate(
   commandId,
@@ -400,9 +404,9 @@ async function getNodeInfo(nodeId) {
     throw new Error(`Document node cannot be exported: ${nodeId}`);
   }
 
-  const response = await node.exportAsync({
+  const response = (await node.exportAsync({
     format: "JSON_REST_V1",
-  });
+  })) as FigmaRestExportResponse;
 
   return filterFigmaNode(response.document);
 }
@@ -421,9 +425,9 @@ async function getNodesInfo(nodeIds) {
         if (node.type === "DOCUMENT") {
           throw new Error(`Document node cannot be exported: ${node.id}`);
         }
-        const response = await node.exportAsync({
+        const response = (await node.exportAsync({
           format: "JSON_REST_V1",
-        });
+        })) as FigmaRestExportResponse;
         return {
           nodeId: node.id,
           document: filterFigmaNode(response.document),
@@ -645,9 +649,9 @@ async function readMyDesign() {
         if (node.type === "DOCUMENT") {
           throw new Error(`Document node cannot be exported: ${node.id}`);
         }
-        const response = await node.exportAsync({
+        const response = (await node.exportAsync({
           format: "JSON_REST_V1",
-        });
+        })) as FigmaRestExportResponse;
         return {
           nodeId: node.id,
           document: filterFigmaNode(response.document),
