@@ -14,13 +14,13 @@ type FigmaRestExportResponse = {
 
 // Helper function for progress updates
 async function sendProgressUpdate(
-  commandId,
-  commandType,
-  status,
-  progress,
-  totalItems,
-  processedItems,
-  message,
+  commandId: string,
+  commandType: string,
+  status: string,
+  progress: number,
+  totalItems: number,
+  processedItems: number,
+  message: string,
   payload: Record<string, unknown> | null = null,
 ) {
   const update: Record<string, unknown> = {
