@@ -5,6 +5,8 @@
   "type": "module",
   "scripts": {
     "socket": "node ./src/socket.ts",
+    "presocket": "npm run build:plugin",
+    "build:plugin": "tsc -p tsconfig.plugin.json",
     "start": "node ./src/server.ts",
     "dev": "node --watch ./src/server.ts",
     "typecheck": "tsc --noEmit && tsc -p tsconfig.plugin.json --noEmit",
@@ -12,7 +14,6 @@
     "mix": "rimraf ./repomix-output.xml && repomix",
     "format:check": "prettier . --check",
     "verify": "npm run build:plugin && npm run typecheck && node ./src/scripts/relay-smoke.ts && node ./src/scripts/mcp-smoke.ts",
-    "build:plugin": "tsc -p tsconfig.plugin.json",
     "update": "npx npm-check-updates -u && npm install && npm run format",
     "update:check": "npx npm-check-updates",
     "dev:plugin": "tsc -p tsconfig.plugin.json --watch"
