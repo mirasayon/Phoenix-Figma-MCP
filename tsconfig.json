@@ -9,9 +9,19 @@
     "forceConsistentCasingInFileNames": true,
     "noEmit": true,
     "rootDir": "./",
-    "lib": ["ESNext"],
-    "types": ["node"]
+    "lib": [
+      "ESNext"
+    ],
+    "types": [
+      "node"
+    ]
   },
-  "include": ["./src"],
-  "exclude": ["node_modules", "dist", "src/code.ts"]
+  "include": [
+    "./src"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "src/plugin"
+  ]
 }

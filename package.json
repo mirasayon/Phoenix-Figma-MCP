@@ -6,17 +6,19 @@
   "scripts": {
     "socket": "node ./src/socket.ts",
     "presocket": "npm run build:plugin",
-    "build:plugin": "tsc -p tsconfig.plugin.json",
+    "build:plugin": "tsc -p src/plugin/tsconfig.json",
     "start": "node ./src/server.ts",
     "dev": "node --watch ./src/server.ts",
-    "typecheck": "tsc --noEmit && tsc -p tsconfig.plugin.json --noEmit",
+    "typecheck:node": "tsc -p tsconfig.json --noEmit",
+    "typecheck:plugin": "tsc -p src/plugin/tsconfig.json --noEmit",
+    "typecheck": "npm run typecheck:node && npm run typecheck:plugin",
     "format": "prettier . --write",
     "mix": "rimraf ./repomix-output.xml && repomix",
     "format:check": "prettier . --check",
     "verify": "npm run build:plugin && npm run typecheck && node ./src/scripts/relay-smoke.ts && node ./src/scripts/mcp-smoke.ts",
     "update": "npx npm-check-updates -u && npm install && npm run format",
     "update:check": "npx npm-check-updates",
-    "dev:plugin": "tsc -p tsconfig.plugin.json --watch"
+    "dev:plugin": "tsc -p src/plugin/tsconfig.json --watch"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.30.0",

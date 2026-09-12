@@ -3,11 +3,13 @@
     "target": "esnext",
     "module": "preserve",
     "moduleResolution": "bundler",
-    "strict": false,
+    "strict": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
     "lib": ["ESNext"],
-    "types": ["@figma/plugin-typings"]
+    "types": ["@figma/plugin-typings"],
+    "rootDir": ".",
+    "outDir": ".."
   },
-  "files": ["./src/code.ts"]
+  "files": ["./code.ts"]
 }

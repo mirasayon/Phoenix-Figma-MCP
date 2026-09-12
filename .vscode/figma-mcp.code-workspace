@@ -2,8 +2,11 @@
   "folders": [
     {
       "path": "..",
-      "name": "Phoeix Figma MCP",
-    },
+      "name": "Phoeix Figma MCP"
+    }
   ],
-  "settings": {},
+  "settings": {
+    "typescript.tsdk": "node_modules/typescript/lib",
+    "typescript.enablePromptUseWorkspaceTsdk": true
+  }
 }

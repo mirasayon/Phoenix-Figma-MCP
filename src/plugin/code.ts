@@ -8,9 +8,322 @@ const state = {
   serverPort: 3055, // Default port
 };
 
-type FigmaRestExportResponse = {
-  document: Record<string, unknown>;
+type RestColor = { r: number; g: number; b: number; a?: number };
+type RestGradientStop = Record<string, unknown> & {
+  color?: RestColor;
+  boundVariables?: unknown;
 };
+type RestPaint = Record<string, unknown> & {
+  color?: RestColor;
+  gradientStops?: RestGradientStop[];
+  boundVariables?: unknown;
+  imageRef?: unknown;
+};
+type RestNode = Record<string, unknown> & {
+  id?: string;
+  name?: string;
+  type?: string;
+  fills?: RestPaint[];
+  strokes?: RestPaint[];
+  cornerRadius?: unknown;
+  absoluteBoundingBox?: unknown;
+  characters?: string;
+  style?: Record<string, unknown>;
+  children?: RestNode[];
+};
+
+type FigmaRestExportResponse = {
+  document: RestNode;
+};
+
+type NumericInput = number | string;
+type RgbaInput = {
+  r: NumericInput;
+  g: NumericInput;
+  b: NumericInput;
+  a?: NumericInput;
+};
+
+type PluginSettings = {
+  serverPort?: number;
+};
+
+type CommandName =
+  | "get_document_info"
+  | "get_selection"
+  | "get_node_info"
+  | "get_nodes_info"
+  | "read_my_design"
+  | "create_rectangle"
+  | "create_frame"
+  | "create_text"
+  | "set_fill_color"
+  | "set_stroke_color"
+  | "move_node"
+  | "resize_node"
+  | "delete_node"
+  | "delete_multiple_nodes"
+  | "get_styles"
+  | "get_local_components"
+  | "create_component_instance"
+  | "export_node_as_image"
+  | "set_corner_radius"
+  | "set_text_content"
+  | "clone_node"
+  | "scan_text_nodes"
+  | "set_multiple_text_contents"
+  | "get_annotations"
+  | "set_annotation"
+  | "scan_nodes_by_types"
+  | "set_multiple_annotations"
+  | "get_instance_overrides"
+  | "set_instance_overrides"
+  | "set_layout_mode"
+  | "set_padding"
+  | "set_axis_align"
+  | "set_layout_sizing"
+  | "set_item_spacing"
+  | "get_reactions"
+  | "set_default_connector"
+  | "create_connections"
+  | "set_focus"
+  | "set_selections";
+
+type PluginUiMessage =
+  | ({ type: "update-settings" } & PluginSettings)
+  | { type: "notify"; message: string }
+  | { type: "close-plugin" }
+  | {
+      type: "execute-command";
+      id: string;
+      command: CommandName;
+      params?: unknown;
+    };
+
+type NodeIdParams = { nodeId?: string };
+type NodeIdsParams = { nodeIds?: string[] };
+type CreateRectangleParams = NodeIdParams & {
+  x?: number;
+  y?: number;
+  width?: number;
+  height?: number;
+  name?: string;
+  parentId?: string;
+};
+type CreateFrameParams = {
+  x?: number;
+  y?: number;
+  width?: number;
+  height?: number;
+  name?: string;
+  parentId?: string;
+  fillColor?: RgbaInput;
+  strokeColor?: RgbaInput;
+  strokeWeight?: number;
+  layoutMode?: FrameNode["layoutMode"];
+  layoutWrap?: FrameNode["layoutWrap"];
+  paddingTop?: number;
+  paddingRight?: number;
+  paddingBottom?: number;
+  paddingLeft?: number;
+  primaryAxisAlignItems?: FrameNode["primaryAxisAlignItems"];
+  counterAxisAlignItems?: FrameNode["counterAxisAlignItems"];
+  layoutSizingHorizontal?: FrameNode["layoutSizingHorizontal"];
+  layoutSizingVertical?: FrameNode["layoutSizingVertical"];
+  itemSpacing?: number;
+};
+type CreateTextParams = {
+  x?: number;
+  y?: number;
+  text?: string;
+  fontSize?: NumericInput;
+  fontWeight?: number;
+  fontColor?: RgbaInput;
+  name?: string;
+  parentId?: string;
+  fontFamily?: string;
+  fontStyle?: string;
+  textAlignHorizontal?: TextNode["textAlignHorizontal"];
+  width?: number;
+  height?: number;
+  textAutoResize?: TextNode["textAutoResize"];
+  lineHeight?: NumericInput;
+};
+type SetFillColorParams = { nodeId?: string; color?: RgbaInput };
+type SetStrokeColorParams = { nodeId?: string; color?: RgbaInput; weight?: number };
+type MoveNodeParams = { nodeId?: string; x?: number; y?: number };
+type ResizeNodeParams = { nodeId?: string; width?: number; height?: number };
+type GetLocalComponentsParams = { commandId?: string };
+type CreateComponentInstanceParams = {
+  componentKey?: string;
+  componentId?: string;
+  x?: number;
+  y?: number;
+  parentId?: string;
+};
+type ExportNodeAsImageParams = { nodeId?: string; scale?: number };
+type SetCornerRadiusParams = { nodeId?: string; radius?: number; corners?: boolean[] };
+type SetTextContentParams = { nodeId?: string; text?: string };
+type SetCharactersOptions = {
+  fallbackFont?: FontName;
+  smartStrategy?: "prevail" | "strict" | "experimental";
+};
+type CloneNodeParams = {
+  nodeId?: string;
+  x?: number;
+  y?: number;
+  positionMode?: "parent" | "frame";
+};
+type ScanTextNodesParams = {
+  nodeId?: string;
+  useChunking?: boolean;
+  chunkSize?: number;
+  commandId?: string;
+};
+type TextReplacement = { nodeId?: string; text?: string };
+type SetMultipleTextContentsParams = {
+  nodeId?: string;
+  text?: TextReplacement[];
+  commandId?: string;
+};
+type GetAnnotationsParams = { nodeId?: string; includeCategories?: boolean };
+type SetAnnotationParams = {
+  nodeId?: string;
+  annotationId?: string;
+  labelMarkdown?: string;
+  categoryId?: string;
+  properties?: ReadonlyArray<AnnotationProperty>;
+};
+type AnnotationInput = {
+  nodeId: string;
+  labelMarkdown: string;
+  categoryId?: string;
+  properties?: ReadonlyArray<AnnotationProperty>;
+};
+type SetMultipleAnnotationsParams = { nodeId?: string; annotations?: AnnotationInput[] };
+type ScanNodesByTypesParams = { nodeId?: string; types?: string[] };
+type LayoutModeParams = {
+  nodeId?: string;
+  layoutMode?: FrameNode["layoutMode"];
+  layoutWrap?: FrameNode["layoutWrap"];
+};
+type PaddingParams = {
+  nodeId?: string;
+  paddingTop?: number;
+  paddingRight?: number;
+  paddingBottom?: number;
+  paddingLeft?: number;
+};
+type AxisAlignParams = {
+  nodeId?: string;
+  primaryAxisAlignItems?: FrameNode["primaryAxisAlignItems"];
+  counterAxisAlignItems?: FrameNode["counterAxisAlignItems"];
+};
+type LayoutSizingParams = {
+  nodeId?: string;
+  layoutSizingHorizontal?: FrameNode["layoutSizingHorizontal"];
+  layoutSizingVertical?: FrameNode["layoutSizingVertical"];
+};
+type ItemSpacingParams = { nodeId?: string; itemSpacing?: number; counterAxisSpacing?: number };
+type SetDefaultConnectorParams = { connectorId?: string };
+type ConnectionSpec = { startNodeId: string; endNodeId: string; text?: string };
+type CreateConnectionsParams = { connections?: ConnectionSpec[] };
+type SetFocusParams = { nodeId?: string };
+type SetSelectionsParams = { nodeIds?: string[] };
+
+type SafeTextNode = {
+  id: string;
+  name: string;
+  type: "TEXT";
+  characters: string;
+  fontSize: number;
+  fontFamily: string;
+  fontStyle: string;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  path: string;
+  depth: number;
+};
+type NodeProcessInfo = { node: BaseNode; parentPath: string[]; depth: number };
+type MatchingNode = {
+  id: string;
+  name: string;
+  type: string;
+  bbox: { x: number; y: number; width: number; height: number };
+};
+type ReactionActionLike = { navigation?: string };
+type ReactionLike = Record<string, unknown> & {
+  action?: ReactionActionLike | null;
+  actions?: ReadonlyArray<ReactionActionLike>;
+};
+type ReactionResult = {
+  id: string;
+  name: string;
+  type: string;
+  depth: number;
+  hasReactions: true;
+  reactions: ReadonlyArray<ReactionLike>;
+  path: string;
+};
+type TextReplacementResult =
+  | { success: true; nodeId: string; originalText: string; translatedText: string }
+  | { success: false; nodeId: string; error: string };
+type DeleteNodeResult =
+  | { success: true; nodeId: string; nodeInfo: { id: string; name: string; type: string } }
+  | { success: false; nodeId: string; error: string };
+type AnnotationApplyResult =
+  { success: true; nodeId: string } | { success: false; nodeId: string; error?: string };
+type FontTreeEntry = { start: number; delimiter: string; family: string; style: string };
+type InstanceOverride = InstanceNode["overrides"][number];
+type SourceInstanceDataResult =
+  | {
+      success: true;
+      sourceInstance: InstanceNode;
+      mainComponent: ComponentNode;
+      overrides: ReadonlyArray<InstanceOverride>;
+    }
+  | { success: false; message: string };
+type TargetInstancesResult =
+  | { success: true; message: string; targetInstances: InstanceNode[] }
+  | { success: false; message: string };
+type InstanceOverrideResult =
+  | { success: true; instanceId: string; instanceName: string; appliedCount: number }
+  | { success: false; instanceId: string; instanceName: string; message: string };
+
+function toFiniteNumber(value: NumericInput | undefined, fallback: number): number {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : fallback;
+}
+
+function errorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : String(error);
+}
+
+function errorStack(error: unknown): string | undefined {
+  return error instanceof Error ? error.stack : undefined;
+}
+
+function asParams<T extends object>(params: unknown): T {
+  return (params ?? {}) as T;
+}
+
+function isSceneNode(node: BaseNode | null): node is SceneNode {
+  return node !== null && node.type !== "DOCUMENT" && node.type !== "PAGE";
+}
+
+function hasChildren(node: BaseNode): node is BaseNode & ChildrenMixin {
+  return "children" in node;
+}
+
+function hasAnnotations(node: BaseNode): node is BaseNode & AnnotationsMixin {
+  return "annotations" in node;
+}
+
+function isFontName(value: FontName | typeof figma.mixed): value is FontName {
+  return value !== figma.mixed;
+}
 
 // Helper function for progress updates
 async function sendProgressUpdate(
@@ -60,7 +373,7 @@ async function sendProgressUpdate(
 figma.showUI(__html__, { width: 350, height: 600 });
 
 // Plugin commands from UI
-figma.ui.onmessage = async (msg) => {
+figma.ui.onmessage = async (msg: PluginUiMessage) => {
   switch (msg.type) {
     case "update-settings":
       updateSettings(msg);
@@ -84,7 +397,7 @@ figma.ui.onmessage = async (msg) => {
         figma.ui.postMessage({
           type: "command-error",
           id: msg.id,
-          error: error.message || "Error executing command",
+          error: errorMessage(error) || "Error executing command",
         });
       }
       break;
@@ -92,12 +405,12 @@ figma.ui.onmessage = async (msg) => {
 };
 
 // Listen for plugin commands from menu
-figma.on("run", ({ command }) => {
+figma.on("run", ({ command }: { command: string }) => {
   figma.ui.postMessage({ type: "auto-connect" });
 });
 
 // Update plugin settings
-function updateSettings(settings) {
+function updateSettings(settings: PluginSettings) {
   if (settings.serverPort) {
     state.serverPort = settings.serverPort;
   }
@@ -108,135 +421,137 @@ function updateSettings(settings) {
 }
 
 // Handle commands from UI
-async function handleCommand(command, params) {
+async function handleCommand(command: CommandName, params: unknown) {
   switch (command) {
     case "get_document_info":
       return await getDocumentInfo();
     case "get_selection":
       return await getSelection();
-    case "get_node_info":
-      if (!params || !params.nodeId) {
+    case "get_node_info": {
+      const { nodeId } = asParams<NodeIdParams>(params);
+      if (!nodeId) {
         throw new Error("Missing nodeId parameter");
       }
-      return await getNodeInfo(params.nodeId);
-    case "get_nodes_info":
-      if (!params || !params.nodeIds || !Array.isArray(params.nodeIds)) {
+      return await getNodeInfo(nodeId);
+    }
+    case "get_nodes_info": {
+      const { nodeIds } = asParams<NodeIdsParams>(params);
+      if (!nodeIds || !Array.isArray(nodeIds)) {
         throw new Error("Missing or invalid nodeIds parameter");
       }
-      return await getNodesInfo(params.nodeIds);
+      return await getNodesInfo(nodeIds);
+    }
     case "read_my_design":
       return await readMyDesign();
     case "create_rectangle":
-      return await createRectangle(params);
+      return await createRectangle(asParams<CreateRectangleParams>(params));
     case "create_frame":
-      return await createFrame(params);
+      return await createFrame(asParams<CreateFrameParams>(params));
     case "create_text":
-      return await createText(params);
+      return await createText(asParams<CreateTextParams>(params));
     case "set_fill_color":
-      return await setFillColor(params);
+      return await setFillColor(asParams<SetFillColorParams>(params));
     case "set_stroke_color":
-      return await setStrokeColor(params);
+      return await setStrokeColor(asParams<SetStrokeColorParams>(params));
     case "move_node":
-      return await moveNode(params);
+      return await moveNode(asParams<MoveNodeParams>(params));
     case "resize_node":
-      return await resizeNode(params);
+      return await resizeNode(asParams<ResizeNodeParams>(params));
     case "delete_node":
-      return await deleteNode(params);
+      return await deleteNode(asParams<NodeIdParams>(params));
     case "delete_multiple_nodes":
-      return await deleteMultipleNodes(params);
+      return await deleteMultipleNodes(asParams<NodeIdsParams>(params));
     case "get_styles":
       return await getStyles();
     case "get_local_components":
-      return await getLocalComponents(params);
+      return await getLocalComponents(asParams<GetLocalComponentsParams>(params));
     // case "get_team_components":
     //   return await getTeamComponents();
     case "create_component_instance":
-      return await createComponentInstance(params);
+      return await createComponentInstance(asParams<CreateComponentInstanceParams>(params));
     case "export_node_as_image":
-      return await exportNodeAsImage(params);
+      return await exportNodeAsImage(asParams<ExportNodeAsImageParams>(params));
     case "set_corner_radius":
-      return await setCornerRadius(params);
+      return await setCornerRadius(asParams<SetCornerRadiusParams>(params));
     case "set_text_content":
-      return await setTextContent(params);
+      return await setTextContent(asParams<SetTextContentParams>(params));
     case "clone_node":
-      return await cloneNode(params);
+      return await cloneNode(asParams<CloneNodeParams>(params));
     case "scan_text_nodes":
-      return await scanTextNodes(params);
+      return await scanTextNodes(asParams<ScanTextNodesParams>(params));
     case "set_multiple_text_contents":
-      return await setMultipleTextContents(params);
+      return await setMultipleTextContents(asParams<SetMultipleTextContentsParams>(params));
     case "get_annotations":
-      return await getAnnotations(params);
+      return await getAnnotations(asParams<GetAnnotationsParams>(params));
     case "set_annotation":
-      return await setAnnotation(params);
+      return await setAnnotation(asParams<SetAnnotationParams>(params));
     case "scan_nodes_by_types":
-      return await scanNodesByTypes(params);
+      return await scanNodesByTypes(asParams<ScanNodesByTypesParams>(params));
     case "set_multiple_annotations":
-      return await setMultipleAnnotations(params);
-    case "get_instance_overrides":
-      // Check if instanceNode parameter is provided
-      if (params && params.instanceNodeId) {
-        // Get the instance node by ID
-        const instanceNode = await figma.getNodeByIdAsync(params.instanceNodeId);
+      return await setMultipleAnnotations(asParams<SetMultipleAnnotationsParams>(params));
+    case "get_instance_overrides": {
+      const { instanceNodeId } = asParams<{ instanceNodeId?: string }>(params);
+      if (instanceNodeId) {
+        const instanceNode = await figma.getNodeByIdAsync(instanceNodeId);
         if (!instanceNode) {
-          throw new Error(`Instance node not found with ID: ${params.instanceNodeId}`);
+          throw new Error(`Instance node not found with ID: ${instanceNodeId}`);
         }
         return await getInstanceOverrides(instanceNode);
       }
-      // Call without instance node if not provided
       return await getInstanceOverrides();
+    }
 
-    case "set_instance_overrides":
-      // Check if instanceNodeIds parameter is provided
-      if (params && params.targetNodeIds) {
-        // Validate that targetNodeIds is an array
-        if (!Array.isArray(params.targetNodeIds)) {
-          throw new Error("targetNodeIds must be an array");
-        }
-
-        // Get the instance nodes by IDs
-        const targetNodes = await getValidTargetInstances(params.targetNodeIds);
-        if (!targetNodes.success) {
-          figma.notify(targetNodes.message);
-          return { success: false, message: targetNodes.message };
-        }
-
-        if (params.sourceInstanceId) {
-          // get source instance data
-          let sourceInstanceData = null;
-          sourceInstanceData = await getSourceInstanceData(params.sourceInstanceId);
-
-          if (!sourceInstanceData.success) {
-            figma.notify(sourceInstanceData.message);
-            return { success: false, message: sourceInstanceData.message };
-          }
-          return await setInstanceOverrides(targetNodes.targetInstances, sourceInstanceData);
-        } else {
-          throw new Error("Missing sourceInstanceId parameter");
-        }
+    case "set_instance_overrides": {
+      const { targetNodeIds, sourceInstanceId } = asParams<{
+        targetNodeIds?: string[];
+        sourceInstanceId?: string;
+      }>(params);
+      if (!targetNodeIds || !Array.isArray(targetNodeIds)) {
+        throw new Error("targetNodeIds must be an array");
       }
+
+      const targetNodes = await getValidTargetInstances(targetNodeIds);
+      if (!targetNodes.success) {
+        figma.notify(targetNodes.message);
+        return { success: false, message: targetNodes.message };
+      }
+
+      if (!sourceInstanceId) {
+        throw new Error("Missing sourceInstanceId parameter");
+      }
+
+      const sourceInstanceData = await getSourceInstanceData(sourceInstanceId);
+      if (!sourceInstanceData.success) {
+        figma.notify(sourceInstanceData.message);
+        return { success: false, message: sourceInstanceData.message };
+      }
+      return await setInstanceOverrides(targetNodes.targetInstances, sourceInstanceData);
+    }
     case "set_layout_mode":
-      return await setLayoutMode(params);
+      return await setLayoutMode(asParams<LayoutModeParams>(params));
     case "set_padding":
-      return await setPadding(params);
+      return await setPadding(asParams<PaddingParams>(params));
     case "set_axis_align":
-      return await setAxisAlign(params);
+      return await setAxisAlign(asParams<AxisAlignParams>(params));
     case "set_layout_sizing":
-      return await setLayoutSizing(params);
+      return await setLayoutSizing(asParams<LayoutSizingParams>(params));
     case "set_item_spacing":
-      return await setItemSpacing(params);
-    case "get_reactions":
-      if (!params || !params.nodeIds || !Array.isArray(params.nodeIds)) {
+      return await setItemSpacing(asParams<ItemSpacingParams>(params));
+    case "get_reactions": {
+      const { nodeIds } = asParams<NodeIdsParams>(params);
+      if (!nodeIds || !Array.isArray(nodeIds)) {
         throw new Error("Missing or invalid nodeIds parameter");
       }
-      return await getReactions(params.nodeIds);
+      return await getReactions(nodeIds);
+    }
     case "set_default_connector":
-      return await setDefaultConnector(params);
+      return await setDefaultConnector(asParams<SetDefaultConnectorParams>(params));
     case "create_connections":
-      return await createConnections(params);
+      return await createConnections(asParams<CreateConnectionsParams>(params));
     case "set_focus":
-      return await setFocus(params);
+      return await setFocus(asParams<SetFocusParams>(params));
     case "set_selections":
-      return await setSelections(params);
+      return await setSelections(asParams<SetSelectionsParams>(params));
     default:
       throw new Error(`Unknown command: ${command}`);
   }
@@ -251,7 +566,7 @@ async function getDocumentInfo() {
     name: page.name,
     id: page.id,
     type: page.type,
-    children: page.children.map((node) => ({
+    children: page.children.map((node: SceneNode) => ({
       id: node.id,
       name: node.name,
       type: node.type,
@@ -274,7 +589,7 @@ async function getDocumentInfo() {
 async function getSelection() {
   return {
     selectionCount: figma.currentPage.selection.length,
-    selection: figma.currentPage.selection.map((node) => ({
+    selection: figma.currentPage.selection.map((node: SceneNode) => ({
       id: node.id,
       name: node.name,
       type: node.type,
@@ -283,7 +598,7 @@ async function getSelection() {
   };
 }
 
-function rgbaToHex(color) {
+function rgbaToHex(color: RestColor): string {
   var r = Math.round(color.r * 255);
   var g = Math.round(color.g * 255);
   var b = Math.round(color.b * 255);
@@ -310,51 +625,46 @@ function rgbaToHex(color) {
   );
 }
 
-function filterFigmaNode(node) {
+function serializeRestPaint(paint: RestPaint): Record<string, unknown> {
+  const processed: Record<string, unknown> = { ...paint };
+  delete processed.boundVariables;
+  delete processed.imageRef;
+
+  if (paint.gradientStops) {
+    processed.gradientStops = paint.gradientStops.map((stop) => {
+      const processedStop: Record<string, unknown> = { ...stop };
+      if (stop.color) {
+        processedStop.color = rgbaToHex(stop.color);
+      }
+      delete processedStop.boundVariables;
+      return processedStop;
+    });
+  }
+
+  if (paint.color) {
+    processed.color = rgbaToHex(paint.color);
+  }
+
+  return processed;
+}
+
+function filterFigmaNode(node: RestNode): Record<string, unknown> | null {
   if (node.type === "VECTOR") {
     return null;
   }
 
-  const filtered: Record<string, any> = {
+  const filtered: Record<string, unknown> = {
     id: node.id,
     name: node.name,
     type: node.type,
   };
 
-  if (node.fills && node.fills.length > 0) {
-    filtered.fills = node.fills.map((fill) => {
-      var processedFill = Object.assign({}, fill);
-      delete processedFill.boundVariables;
-      delete processedFill.imageRef;
-
-      if (processedFill.gradientStops) {
-        processedFill.gradientStops = processedFill.gradientStops.map((stop) => {
-          var processedStop = Object.assign({}, stop);
-          if (processedStop.color) {
-            processedStop.color = rgbaToHex(processedStop.color);
-          }
-          delete processedStop.boundVariables;
-          return processedStop;
-        });
-      }
-
-      if (processedFill.color) {
-        processedFill.color = rgbaToHex(processedFill.color);
-      }
-
-      return processedFill;
-    });
+  if (node.fills?.length) {
+    filtered.fills = node.fills.map(serializeRestPaint);
   }
 
-  if (node.strokes && node.strokes.length > 0) {
-    filtered.strokes = node.strokes.map((stroke) => {
-      var processedStroke = Object.assign({}, stroke);
-      delete processedStroke.boundVariables;
-      if (processedStroke.color) {
-        processedStroke.color = rgbaToHex(processedStroke.color);
-      }
-      return processedStroke;
-    });
+  if (node.strokes?.length) {
+    filtered.strokes = node.strokes.map(serializeRestPaint);
   }
 
   if (node.cornerRadius !== undefined) {
@@ -382,19 +692,13 @@ function filterFigmaNode(node) {
   }
 
   if (node.children) {
-    filtered.children = node.children
-      .map((child) => {
-        return filterFigmaNode(child);
-      })
-      .filter((child) => {
-        return child !== null;
-      });
+    filtered.children = node.children.map(filterFigmaNode).filter((child) => child !== null);
   }
 
   return filtered;
 }
 
-async function getNodeInfo(nodeId) {
+async function getNodeInfo(nodeId: string) {
   const node = await figma.getNodeByIdAsync(nodeId);
 
   if (!node) {
@@ -411,7 +715,7 @@ async function getNodeInfo(nodeId) {
   return filterFigmaNode(response.document);
 }
 
-async function getNodesInfo(nodeIds) {
+async function getNodesInfo(nodeIds: string[]) {
   try {
     // Load all nodes in parallel
     const nodes = await Promise.all(nodeIds.map((id) => figma.getNodeByIdAsync(id)));
@@ -437,11 +741,11 @@ async function getNodesInfo(nodeIds) {
 
     return responses;
   } catch (error) {
-    throw new Error(`Error getting nodes info: ${error.message}`);
+    throw new Error(`Error getting nodes info: ${errorMessage(error)}`);
   }
 }
 
-async function getReactions(nodeIds) {
+async function getReactions(nodeIds: string[]) {
   try {
     const commandId = generateCommandId();
     sendProgressUpdate(
@@ -456,11 +760,11 @@ async function getReactions(nodeIds) {
 
     // Function to find nodes with reactions from the node and all its children
     async function findNodesWithReactions(
-      node,
-      processedNodes = new Set(),
+      node: BaseNode,
+      processedNodes: Set<string> = new Set<string>(),
       depth = 0,
-      results = [],
-    ) {
+      results: ReactionResult[] = [],
+    ): Promise<ReactionResult[]> {
       // Skip already processed nodes (prevent circular references)
       if (processedNodes.has(node.id)) {
         return results;
@@ -468,19 +772,20 @@ async function getReactions(nodeIds) {
 
       processedNodes.add(node.id);
 
-      // Check if the current node has reactions
-      let filteredReactions = [];
-      if (node.reactions && node.reactions.length > 0) {
-        // Filter out reactions with navigation === 'CHANGE_TO'
-        filteredReactions = node.reactions.filter((r) => {
-          // Some reactions may have action or actions array
-          if (r.action && r.action.navigation === "CHANGE_TO") return false;
-          if (Array.isArray(r.actions)) {
-            // If any action in actions array is CHANGE_TO, exclude
-            return !r.actions.some((a) => a.navigation === "CHANGE_TO");
-          }
-          return true;
-        });
+      // Check if the current node has reactions. Not every BaseNode implements ReactionMixin.
+      let filteredReactions: ReadonlyArray<ReactionLike> = [];
+      if ("reactions" in node) {
+        const reactions = (node as BaseNode & ReactionMixin)
+          .reactions as ReadonlyArray<ReactionLike>;
+        if (reactions.length > 0) {
+          filteredReactions = reactions.filter((reaction) => {
+            if (reaction.action?.navigation === "CHANGE_TO") return false;
+            if (Array.isArray(reaction.actions)) {
+              return !reaction.actions.some((action) => action.navigation === "CHANGE_TO");
+            }
+            return true;
+          });
+        }
       }
       const hasFilteredReactions = filteredReactions.length > 0;
 
@@ -499,8 +804,8 @@ async function getReactions(nodeIds) {
         await highlightNodeWithAnimation(node);
       }
 
-      // If node has children, recursively search them
-      if (node.children) {
+      // If node has children, recursively search them.
+      if (hasChildren(node)) {
         for (const child of node.children) {
           await findNodesWithReactions(child, processedNodes, depth + 1, results);
         }
@@ -510,42 +815,42 @@ async function getReactions(nodeIds) {
     }
 
     // Function to apply animated highlight effect to a node
-    async function highlightNodeWithAnimation(node) {
-      // Save original stroke properties
-      const originalStrokeWeight = node.strokeWeight;
-      const originalStrokes = node.strokes ? [...node.strokes] : [];
+    async function highlightNodeWithAnimation(node: BaseNode) {
+      if (!("strokes" in node) || !("strokeWeight" in node)) {
+        return;
+      }
+
+      const strokeNode = node as BaseNode & GeometryMixin;
+      const originalStrokeWeight = strokeNode.strokeWeight;
+      const originalStrokes = [...strokeNode.strokes];
 
       try {
-        // Apply orange border stroke
-        node.strokeWeight = 4;
-        node.strokes = [
+        strokeNode.strokeWeight = 4;
+        strokeNode.strokes = [
           {
             type: "SOLID",
-            color: { r: 1, g: 0.5, b: 0 }, // Orange color
+            color: { r: 1, g: 0.5, b: 0 },
             opacity: 0.8,
           },
         ];
 
-        // Set timeout for animation effect (restore to original after 1.5 seconds)
         setTimeout(() => {
           try {
-            // Restore original stroke properties
-            node.strokeWeight = originalStrokeWeight;
-            node.strokes = originalStrokes;
+            strokeNode.strokeWeight = originalStrokeWeight;
+            strokeNode.strokes = originalStrokes;
           } catch (restoreError) {
-            console.error(`Error restoring node stroke: ${restoreError.message}`);
+            console.error(`Error restoring node stroke: ${errorMessage(restoreError)}`);
           }
         }, 1500);
       } catch (highlightError) {
-        console.error(`Error highlighting node: ${highlightError.message}`);
-        // Continue even if highlighting fails
+        console.error(`Error highlighting node: ${errorMessage(highlightError)}`);
       }
     }
 
     // Get node hierarchy path as a string
-    function getNodePath(node) {
-      const path = [];
-      let current = node;
+    function getNodePath(node: BaseNode): string {
+      const path: string[] = [];
+      let current: BaseNode | null = node;
 
       while (current && current.parent) {
         path.unshift(current.name);
@@ -556,7 +861,7 @@ async function getReactions(nodeIds) {
     }
 
     // Array to store all results
-    let allResults = [];
+    let allResults: ReactionResult[] = [];
     let processedCount = 0;
     const totalCount = nodeIds.length;
 
@@ -581,7 +886,7 @@ async function getReactions(nodeIds) {
         }
 
         // Search for reactions in the node and its children
-        const processedNodes = new Set();
+        const processedNodes = new Set<string>();
         const nodeResults = await findNodesWithReactions(node, processedNodes);
 
         // Add results
@@ -607,7 +912,7 @@ async function getReactions(nodeIds) {
           processedCount / totalCount,
           totalCount,
           processedCount,
-          `Error processing node: ${error.message}`,
+          `Error processing node: ${errorMessage(error)}`,
         );
       }
     }
@@ -629,7 +934,7 @@ async function getReactions(nodeIds) {
       nodes: allResults,
     };
   } catch (error) {
-    throw new Error(`Failed to get reactions: ${error.message}`);
+    throw new Error(`Failed to get reactions: ${errorMessage(error)}`);
   }
 }
 
@@ -637,7 +942,7 @@ async function readMyDesign() {
   try {
     // Load all selected nodes in parallel
     const nodes = await Promise.all(
-      figma.currentPage.selection.map((node) => figma.getNodeByIdAsync(node.id)),
+      figma.currentPage.selection.map((node: SceneNode) => figma.getNodeByIdAsync(node.id)),
     );
 
     // Filter out any null values (nodes that weren't found)
@@ -661,11 +966,11 @@ async function readMyDesign() {
 
     return responses;
   } catch (error) {
-    throw new Error(`Error getting nodes info: ${error.message}`);
+    throw new Error(`Error getting nodes info: ${errorMessage(error)}`);
   }
 }
 
-async function createRectangle(params) {
+async function createRectangle(params: CreateRectangleParams) {
   const { x = 0, y = 0, width = 100, height = 100, name = "Rectangle", parentId } = params || {};
 
   const rect = figma.createRectangle();
@@ -699,7 +1004,7 @@ async function createRectangle(params) {
   };
 }
 
-async function createFrame(params) {
+async function createFrame(params: CreateFrameParams) {
   const {
     x = 0,
     y = 0,
@@ -757,11 +1062,11 @@ async function createFrame(params) {
     const paintStyle: SolidPaint = {
       type: "SOLID",
       color: {
-        r: parseFloat(fillColor.r) || 0,
-        g: parseFloat(fillColor.g) || 0,
-        b: parseFloat(fillColor.b) || 0,
+        r: toFiniteNumber(fillColor.r, 0),
+        g: toFiniteNumber(fillColor.g, 0),
+        b: toFiniteNumber(fillColor.b, 0),
       },
-      opacity: parseFloat(fillColor.a) || 1,
+      opacity: toFiniteNumber(fillColor.a, 1),
     };
     frame.fills = [paintStyle];
   }
@@ -771,11 +1076,11 @@ async function createFrame(params) {
     const strokeStyle: SolidPaint = {
       type: "SOLID",
       color: {
-        r: parseFloat(strokeColor.r) || 0,
-        g: parseFloat(strokeColor.g) || 0,
-        b: parseFloat(strokeColor.b) || 0,
+        r: toFiniteNumber(strokeColor.r, 0),
+        g: toFiniteNumber(strokeColor.g, 0),
+        b: toFiniteNumber(strokeColor.b, 0),
       },
-      opacity: parseFloat(strokeColor.a) || 1,
+      opacity: toFiniteNumber(strokeColor.a, 1),
     };
     frame.strokes = [strokeStyle];
   }
@@ -815,7 +1120,7 @@ async function createFrame(params) {
   };
 }
 
-async function createText(params) {
+async function createText(params: CreateTextParams) {
   const {
     x = 0,
     y = 0,
@@ -835,7 +1140,7 @@ async function createText(params) {
   } = params || {};
 
   // Map common font weights to Figma font styles
-  const getFontStyle = (weight) => {
+  const getFontStyle = (weight: number): string => {
     switch (weight) {
       case 100:
         return "Thin";
@@ -910,11 +1215,11 @@ async function createText(params) {
   const paintStyle: SolidPaint = {
     type: "SOLID",
     color: {
-      r: parseFloat(fontColor.r) || 0,
-      g: parseFloat(fontColor.g) || 0,
-      b: parseFloat(fontColor.b) || 0,
+      r: toFiniteNumber(fontColor.r, 0),
+      g: toFiniteNumber(fontColor.g, 0),
+      b: toFiniteNumber(fontColor.b, 0),
     },
-    opacity: parseFloat(fontColor.a) || 1,
+    opacity: toFiniteNumber(fontColor.a, 1),
   };
   textNode.fills = [paintStyle];
 
@@ -952,16 +1257,17 @@ async function createText(params) {
   };
 }
 
-async function setFillColor(params) {
+async function setFillColor(params: SetFillColorParams) {
   console.log("setFillColor", params);
-  const {
-    nodeId,
-    color: { r, g, b, a },
-  } = params || {};
+  const { nodeId, color } = params;
 
   if (!nodeId) {
     throw new Error("Missing nodeId parameter");
   }
+  if (!color) {
+    throw new Error("Missing color parameter");
+  }
+  const { r, g, b, a } = color;
 
   const node = await figma.getNodeByIdAsync(nodeId);
   if (!node) {
@@ -974,10 +1280,10 @@ async function setFillColor(params) {
 
   // Create RGBA color
   const rgbColor = {
-    r: parseFloat(r) || 0,
-    g: parseFloat(g) || 0,
-    b: parseFloat(b) || 0,
-    a: parseFloat(a) || 1,
+    r: toFiniteNumber(r, 0),
+    g: toFiniteNumber(g, 0),
+    b: toFiniteNumber(b, 0),
+    a: toFiniteNumber(a, 1),
   };
 
   // Set fill
@@ -1002,16 +1308,16 @@ async function setFillColor(params) {
   };
 }
 
-async function setStrokeColor(params) {
-  const {
-    nodeId,
-    color: { r, g, b, a },
-    weight = 1,
-  } = params || {};
+async function setStrokeColor(params: SetStrokeColorParams) {
+  const { nodeId, color, weight = 1 } = params;
 
   if (!nodeId) {
     throw new Error("Missing nodeId parameter");
   }
+  if (!color) {
+    throw new Error("Missing color parameter");
+  }
+  const { r, g, b, a } = color;
 
   const node = await figma.getNodeByIdAsync(nodeId);
   if (!node) {
@@ -1024,10 +1330,10 @@ async function setStrokeColor(params) {
 
   // Create RGBA color
   const rgbColor = {
-    r: r !== undefined ? r : 0,
-    g: g !== undefined ? g : 0,
-    b: b !== undefined ? b : 0,
-    a: a !== undefined ? a : 1,
+    r: toFiniteNumber(r, 0),
+    g: toFiniteNumber(g, 0),
+    b: toFiniteNumber(b, 0),
+    a: toFiniteNumber(a, 1),
   };
 
   // Set stroke
@@ -1056,7 +1362,7 @@ async function setStrokeColor(params) {
   };
 }
 
-async function moveNode(params) {
+async function moveNode(params: MoveNodeParams) {
   const { nodeId, x, y } = params || {};
 
   if (!nodeId) {
@@ -1087,7 +1393,7 @@ async function moveNode(params) {
   };
 }
 
-async function resizeNode(params) {
+async function resizeNode(params: ResizeNodeParams) {
   const { nodeId, width, height } = params || {};
 
   if (!nodeId) {
@@ -1117,7 +1423,7 @@ async function resizeNode(params) {
   };
 }
 
-async function deleteNode(params) {
+async function deleteNode(params: NodeIdParams) {
   const { nodeId } = params || {};
 
   if (!nodeId) {
@@ -1150,25 +1456,25 @@ async function getStyles() {
   };
 
   return {
-    colors: styles.colors.map((style) => ({
+    colors: styles.colors.map((style: PaintStyle) => ({
       id: style.id,
       name: style.name,
       key: style.key,
       paint: style.paints[0],
     })),
-    texts: styles.texts.map((style) => ({
+    texts: styles.texts.map((style: TextStyle) => ({
       id: style.id,
       name: style.name,
       key: style.key,
       fontSize: style.fontSize,
       fontName: style.fontName,
     })),
-    effects: styles.effects.map((style) => ({
+    effects: styles.effects.map((style: EffectStyle) => ({
       id: style.id,
       name: style.name,
       key: style.key,
     })),
-    grids: styles.grids.map((style) => ({
+    grids: styles.grids.map((style: GridStyle) => ({
       id: style.id,
       name: style.name,
       key: style.key,
@@ -1176,7 +1482,7 @@ async function getStyles() {
   };
 }
 
-async function getLocalComponents(params) {
+async function getLocalComponents(params: GetLocalComponentsParams = {}) {
   const commandId = (params && params.commandId) || generateCommandId();
   const pages = figma.root.children;
   const totalPages = pages.length;
@@ -1192,7 +1498,7 @@ async function getLocalComponents(params) {
     null,
   );
 
-  var allComponents = [];
+  const allComponents: Array<{ id: string; name: string; key: string | null }> = [];
 
   for (var i = 0; i < totalPages; i++) {
     var page = pages[i];
@@ -1260,11 +1566,11 @@ async function getLocalComponents(params) {
 //       })),
 //     };
 //   } catch (error) {
-//     throw new Error(`Error getting team components: ${error.message}`);
+//     throw new Error(`Error getting team components: ${errorMessage(error)}`);
 //   }
 // }
 
-async function createComponentInstance(params) {
+async function createComponentInstance(params: CreateComponentInstanceParams) {
   const { componentKey, componentId, x = 0, y = 0, parentId } = params || {};
 
   if (!componentKey && !componentId) {
@@ -1274,7 +1580,7 @@ async function createComponentInstance(params) {
   }
 
   try {
-    let component;
+    let component: ComponentNode;
 
     if (componentId) {
       // Local component: get node directly by ID
@@ -1290,6 +1596,9 @@ async function createComponentInstance(params) {
       component = node;
     } else {
       // Published library component: import by key
+      if (!componentKey) {
+        throw new Error("Missing componentKey parameter");
+      }
       component = await figma.importComponentByKeyAsync(componentKey);
     }
 
@@ -1300,7 +1609,7 @@ async function createComponentInstance(params) {
     if (parentId) {
       const parent = await figma.getNodeByIdAsync(parentId);
       if (parent && "appendChild" in parent) {
-        parent.appendChild(instance);
+        (parent as ChildrenMixin).appendChild(instance);
       } else {
         figma.currentPage.appendChild(instance);
       }
@@ -1320,11 +1629,11 @@ async function createComponentInstance(params) {
       mainComponentId: mainComponent ? mainComponent.id : undefined,
     };
   } catch (error) {
-    throw new Error(`Error creating component instance: ${error.message}`);
+    throw new Error(`Error creating component instance: ${errorMessage(error)}`);
   }
 }
 
-async function exportNodeAsImage(params) {
+async function exportNodeAsImage(params: ExportNodeAsImageParams) {
   const { nodeId, scale = 1 } = params || {};
 
   const format = "PNG" as const;
@@ -1364,10 +1673,10 @@ async function exportNodeAsImage(params) {
       imageData: base64,
     };
   } catch (error) {
-    throw new Error(`Error exporting node as image: ${error.message}`);
+    throw new Error(`Error exporting node as image: ${errorMessage(error)}`);
   }
 }
-function customBase64Encode(bytes) {
+function customBase64Encode(bytes: Uint8Array): string {
   const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
   let base64 = "";
 
@@ -1418,7 +1727,7 @@ function customBase64Encode(bytes) {
   return base64;
 }
 
-async function setCornerRadius(params) {
+async function setCornerRadius(params: SetCornerRadiusParams) {
   const { nodeId, radius, corners } = params || {};
 
   if (!nodeId) {
@@ -1467,7 +1776,7 @@ async function setCornerRadius(params) {
   };
 }
 
-async function setTextContent(params) {
+async function setTextContent(params: SetTextContentParams) {
   const { nodeId, text } = params || {};
 
   if (!nodeId) {
@@ -1501,7 +1810,7 @@ async function setTextContent(params) {
       fontName: node.fontName,
     };
   } catch (error) {
-    throw new Error(`Error setting text content: ${error.message}`);
+    throw new Error(`Error setting text content: ${errorMessage(error)}`);
   }
 }
 
@@ -1527,198 +1836,220 @@ async function setTextContent(params) {
   }
 })();
 
-function uniqBy(arr, predicate) {
-  const cb = typeof predicate === "function" ? predicate : (o) => o[predicate];
-  return [
-    ...arr
-      .reduce((map, item) => {
-        const key = item === null || item === undefined ? item : cb(item);
-
-        map.has(key) || map.set(key, item);
-
-        return map;
-      }, new Map())
-      .values(),
-  ];
+function uniqBy<T, K>(arr: readonly T[], predicate: (item: T) => K): T[] {
+  return [...new Map(arr.map((item) => [predicate(item), item] as const)).values()];
 }
-const setCharacters = async (node, characters, options = undefined) => {
-  const fallbackFont = (options && options.fallbackFont) || {
+
+const setCharacters = async (
+  node: TextNode,
+  characters: string,
+  options?: SetCharactersOptions,
+): Promise<boolean> => {
+  const fallbackFont: FontName = options?.fallbackFont ?? {
     family: "Inter",
     style: "Regular",
   };
+
   try {
     if (node.fontName === figma.mixed) {
-      if (options && options.smartStrategy === "prevail") {
-        const fontHashTree = {};
-        for (let i = 1; i < node.characters.length; i++) {
-          const charFont = node.getRangeFontName(i - 1, i);
-          const key = `${charFont.family}::${charFont.style}`;
-          fontHashTree[key] = fontHashTree[key] ? fontHashTree[key] + 1 : 1;
-        }
-        const prevailedTreeItem = Object.entries(fontHashTree as Record<string, number>).sort(
-          (a, b) => b[1] - a[1],
-        )[0];
-        const [family, style] = prevailedTreeItem[0].split("::");
-        const prevailedFont = {
-          family,
-          style,
-        };
-        await figma.loadFontAsync(prevailedFont);
-        node.fontName = prevailedFont;
-      } else if (options && options.smartStrategy === "strict") {
+      if (options?.smartStrategy === "strict") {
         return setCharactersWithStrictMatchFont(node, characters, fallbackFont);
-      } else if (options && options.smartStrategy === "experimental") {
-        return setCharactersWithSmartMatchFont(node, characters, fallbackFont);
-      } else {
-        const firstCharFont = node.getRangeFontName(0, 1);
-        await figma.loadFontAsync(firstCharFont);
-        node.fontName = firstCharFont;
       }
+      if (options?.smartStrategy === "experimental") {
+        return setCharactersWithSmartMatchFont(node, characters, fallbackFont);
+      }
+
+      let selectedFont: FontName = fallbackFont;
+      if (node.characters.length > 0) {
+        if (options?.smartStrategy === "prevail") {
+          const fontFrequency: Record<string, { font: FontName; count: number }> = {};
+          for (let i = 0; i < node.characters.length; i++) {
+            const rangeFont = node.getRangeFontName(i, i + 1);
+            if (!isFontName(rangeFont)) continue;
+            const key = `${rangeFont.family}::${rangeFont.style}`;
+            const current = fontFrequency[key];
+            fontFrequency[key] = current
+              ? { font: current.font, count: current.count + 1 }
+              : { font: rangeFont, count: 1 };
+          }
+          const mostUsed = Object.values(fontFrequency).sort((a, b) => b.count - a.count)[0];
+          if (mostUsed) selectedFont = mostUsed.font;
+        } else {
+          const firstCharFont = node.getRangeFontName(0, 1);
+          if (isFontName(firstCharFont)) selectedFont = firstCharFont;
+        }
+      }
+
+      await figma.loadFontAsync(selectedFont);
+      node.fontName = selectedFont;
     } else {
-      await figma.loadFontAsync({
-        family: node.fontName.family,
-        style: node.fontName.style,
-      });
+      await figma.loadFontAsync(node.fontName);
     }
-  } catch (err) {
+  } catch (error) {
     const current =
       node.fontName === figma.mixed ? "mixed" : `${node.fontName.family} ${node.fontName.style}`;
     console.warn(
       `Failed to load "${current}" font and replaced with fallback "${fallbackFont.family} ${fallbackFont.style}"`,
-      err,
+      error,
     );
     await figma.loadFontAsync(fallbackFont);
     node.fontName = fallbackFont;
   }
+
   try {
     node.characters = characters;
     return true;
-  } catch (err) {
-    console.warn(`Failed to set characters. Skipped.`, err);
+  } catch (error) {
+    console.warn("Failed to set characters. Skipped.", error);
     return false;
   }
 };
 
-const setCharactersWithStrictMatchFont = async (node, characters, fallbackFont) => {
-  const fontHashTree = {};
-  for (let i = 1; i < node.characters.length; i++) {
-    const startIdx = i - 1;
-    const startCharFont = node.getRangeFontName(startIdx, i);
-    const startCharFontVal = `${startCharFont.family}::${startCharFont.style}`;
-    while (i < node.characters.length) {
-      i++;
-      const charFont = node.getRangeFontName(i - 1, i);
-      if (startCharFontVal !== `${charFont.family}::${charFont.style}`) {
+type FontRange = { start: number; end: number; font: FontName };
+
+function collectFontRanges(node: TextNode): FontRange[] {
+  const ranges: FontRange[] = [];
+  const length = node.characters.length;
+  let index = 0;
+
+  while (index < length) {
+    const start = index;
+    const startFontValue = node.getRangeFontName(start, start + 1);
+    if (!isFontName(startFontValue)) {
+      index++;
+      continue;
+    }
+
+    index++;
+    while (index < length) {
+      const nextFontValue = node.getRangeFontName(index, index + 1);
+      if (
+        !isFontName(nextFontValue) ||
+        nextFontValue.family !== startFontValue.family ||
+        nextFontValue.style !== startFontValue.style
+      ) {
         break;
       }
+      index++;
     }
-    fontHashTree[`${startIdx}_${i}`] = startCharFontVal;
+
+    ranges.push({ start, end: index, font: startFontValue });
   }
+
+  return ranges;
+}
+
+const setCharactersWithStrictMatchFont = async (
+  node: TextNode,
+  characters: string,
+  fallbackFont: FontName,
+): Promise<boolean> => {
+  const ranges = collectFontRanges(node);
+
   await figma.loadFontAsync(fallbackFont);
   node.fontName = fallbackFont;
   node.characters = characters;
-  console.log(fontHashTree);
+
   await Promise.all(
-    Object.keys(fontHashTree).map(async (range) => {
-      console.log(range, fontHashTree[range]);
-      const [start, end] = range.split("_");
-      const [family, style] = fontHashTree[range].split("::");
-      const matchedFont = {
-        family,
-        style,
-      };
-      await figma.loadFontAsync(matchedFont);
-      return node.setRangeFontName(Number(start), Number(end), matchedFont);
+    ranges.map(async ({ start, end, font }) => {
+      if (start >= characters.length) return;
+      const boundedEnd = Math.min(end, characters.length);
+      await figma.loadFontAsync(font);
+      node.setRangeFontName(start, boundedEnd, font);
     }),
   );
+
   return true;
 };
 
-const getDelimiterPos = (str, delimiter, startIdx = 0, endIdx = str.length) => {
-  const indices = [];
-  let temp = startIdx;
+const getDelimiterPos = (
+  str: string,
+  delimiter: string,
+  startIdx = 0,
+  endIdx = str.length,
+): Array<[number, number]> => {
+  const indices: Array<[number, number]> = [];
+  let segmentStart = startIdx;
+
   for (let i = startIdx; i < endIdx; i++) {
-    if (str[i] === delimiter && i + startIdx !== endIdx && temp !== i + startIdx) {
-      indices.push([temp, i + startIdx]);
-      temp = i + startIdx + 1;
+    if (str[i] === delimiter) {
+      if (segmentStart < i) indices.push([segmentStart, i]);
+      segmentStart = i + 1;
     }
   }
-  temp !== endIdx && indices.push([temp, endIdx]);
-  return indices.filter(Boolean);
+
+  if (segmentStart < endIdx) indices.push([segmentStart, endIdx]);
+  return indices;
 };
 
-const buildLinearOrder = (node) => {
-  const fontTree = [];
-  const newLinesPos = getDelimiterPos(node.characters, "\n");
-  newLinesPos.forEach(([newLinesRangeStart, newLinesRangeEnd], n) => {
-    const newLinesRangeFont = node.getRangeFontName(newLinesRangeStart, newLinesRangeEnd);
-    if (newLinesRangeFont === figma.mixed) {
-      const spacesPos = getDelimiterPos(node.characters, " ", newLinesRangeStart, newLinesRangeEnd);
-      spacesPos.forEach(([spacesRangeStart, spacesRangeEnd], s) => {
-        const spacesRangeFont = node.getRangeFontName(spacesRangeStart, spacesRangeEnd);
-        if (spacesRangeFont === figma.mixed) {
-          const spacesRangeFont = node.getRangeFontName(spacesRangeStart, spacesRangeStart[0]);
-          fontTree.push({
-            start: spacesRangeStart,
-            delimiter: " ",
-            family: spacesRangeFont.family,
-            style: spacesRangeFont.style,
-          });
-        } else {
-          fontTree.push({
-            start: spacesRangeStart,
-            delimiter: " ",
-            family: spacesRangeFont.family,
-            style: spacesRangeFont.style,
-          });
-        }
-      });
-    } else {
+const buildLinearOrder = (node: TextNode): FontTreeEntry[] => {
+  const fontTree: FontTreeEntry[] = [];
+  const lineRanges = getDelimiterPos(node.characters, "\n");
+
+  for (const [lineStart, lineEnd] of lineRanges) {
+    const lineFont = node.getRangeFontName(lineStart, lineEnd);
+    if (isFontName(lineFont)) {
       fontTree.push({
-        start: newLinesRangeStart,
+        start: lineStart,
         delimiter: "\n",
-        family: newLinesRangeFont.family,
-        style: newLinesRangeFont.style,
+        family: lineFont.family,
+        style: lineFont.style,
+      });
+      continue;
+    }
+
+    const wordRanges = getDelimiterPos(node.characters, " ", lineStart, lineEnd);
+    for (const [wordStart, wordEnd] of wordRanges) {
+      const wordFont = node.getRangeFontName(wordStart, wordEnd);
+      let resolvedFont: FontName | null = isFontName(wordFont) ? wordFont : null;
+      if (!resolvedFont && wordStart < wordEnd) {
+        const firstCharFont = node.getRangeFontName(wordStart, wordStart + 1);
+        if (isFontName(firstCharFont)) resolvedFont = firstCharFont;
+      }
+      if (!resolvedFont) continue;
+
+      fontTree.push({
+        start: wordStart,
+        delimiter: " ",
+        family: resolvedFont.family,
+        style: resolvedFont.style,
       });
     }
-  });
-  return fontTree
-    .sort((a, b) => +a.start - +b.start)
-    .map(({ family, style, delimiter }) => ({ family, style, delimiter }));
+  }
+
+  return fontTree.sort((a, b) => a.start - b.start);
 };
 
-const setCharactersWithSmartMatchFont = async (node, characters, fallbackFont) => {
+const setCharactersWithSmartMatchFont = async (
+  node: TextNode,
+  characters: string,
+  fallbackFont: FontName,
+): Promise<boolean> => {
   const rangeTree = buildLinearOrder(node);
-  const fontsToLoad = uniqBy(rangeTree, ({ family, style }) => `${family}::${style}`).map(
-    ({ family, style }) => ({
-      family,
-      style,
-    }),
+  const fontsToLoad = uniqBy(
+    rangeTree.map(({ family, style }) => ({ family, style })),
+    ({ family, style }) => `${family}::${style}`,
   );
 
-  await Promise.all([...fontsToLoad, fallbackFont].map(figma.loadFontAsync));
+  await Promise.all([...fontsToLoad, fallbackFont].map((font) => figma.loadFontAsync(font)));
 
   node.fontName = fallbackFont;
   node.characters = characters;
 
   let prevPos = 0;
   rangeTree.forEach(({ family, style, delimiter }) => {
-    if (prevPos < node.characters.length) {
-      const delimeterPos = node.characters.indexOf(delimiter, prevPos);
-      const endPos = delimeterPos > prevPos ? delimeterPos : node.characters.length;
-      const matchedFont = {
-        family,
-        style,
-      };
-      node.setRangeFontName(prevPos, endPos, matchedFont);
-      prevPos = endPos + 1;
-    }
+    if (prevPos >= node.characters.length) return;
+    const delimiterPos = node.characters.indexOf(delimiter, prevPos);
+    const endPos = delimiterPos > prevPos ? delimiterPos : node.characters.length;
+    const matchedFont: FontName = { family, style };
+    node.setRangeFontName(prevPos, endPos, matchedFont);
+    prevPos = endPos + 1;
   });
   return true;
 };
 
 // Add the cloneNode function implementation
-async function cloneNode(params) {
+async function cloneNode(params: CloneNodeParams) {
   const { nodeId, x, y, positionMode = "parent" } = params || {};
 
   if (!nodeId) {
@@ -1780,7 +2111,7 @@ async function cloneNode(params) {
   };
 }
 
-async function scanTextNodes(params) {
+async function scanTextNodes(params: ScanTextNodesParams) {
   console.log(`Starting to scan text nodes from node ID: ${params.nodeId}`);
   const {
     nodeId,
@@ -1788,6 +2119,10 @@ async function scanTextNodes(params) {
     chunkSize = 10,
     commandId = generateCommandId(),
   } = params || {};
+
+  if (!nodeId) {
+    throw new Error("Missing nodeId parameter");
+  }
 
   const node = await figma.getNodeByIdAsync(nodeId);
 
@@ -1809,7 +2144,7 @@ async function scanTextNodes(params) {
 
   // If chunking is not enabled, use the original implementation
   if (!useChunking) {
-    const textNodes = [];
+    const textNodes: SafeTextNode[] = [];
     try {
       // Send started progress update
       sendProgressUpdate(
@@ -1855,11 +2190,11 @@ async function scanTextNodes(params) {
         0,
         0,
         0,
-        `Error scanning text nodes: ${error.message}`,
-        { error: error.message },
+        `Error scanning text nodes: ${errorMessage(error)}`,
+        { error: errorMessage(error) },
       );
 
-      throw new Error(`Error scanning text nodes: ${error.message}`);
+      throw new Error(`Error scanning text nodes: ${errorMessage(error)}`);
     }
   }
 
@@ -1867,7 +2202,7 @@ async function scanTextNodes(params) {
   console.log(`Using chunked scanning with chunk size: ${chunkSize}`);
 
   // First, collect all nodes to process (without processing them yet)
-  const nodesToProcess = [];
+  const nodesToProcess: NodeProcessInfo[] = [];
 
   // Send started progress update
   sendProgressUpdate(
@@ -1907,7 +2242,7 @@ async function scanTextNodes(params) {
   );
 
   // Process nodes in chunks
-  const allTextNodes = [];
+  const allTextNodes: SafeTextNode[] = [];
   let processedNodes = 0;
   let chunksProcessed = 0;
 
@@ -1934,7 +2269,7 @@ async function scanTextNodes(params) {
     );
 
     const chunkNodes = nodesToProcess.slice(i, chunkEnd);
-    const chunkTextNodes = [];
+    const chunkTextNodes: SafeTextNode[] = [];
 
     // Process each node in this chunk
     for (const nodeInfo of chunkNodes) {
@@ -1949,7 +2284,7 @@ async function scanTextNodes(params) {
             chunkTextNodes.push(textNodeInfo);
           }
         } catch (error) {
-          console.error(`Error processing text node: ${error.message}`);
+          console.error(`Error processing text node: ${errorMessage(error)}`);
           // Continue with other nodes
         }
       }
@@ -2015,9 +2350,14 @@ async function scanTextNodes(params) {
 }
 
 // Helper function to collect all nodes that need to be processed
-async function collectNodesToProcess(node, parentPath = [], depth = 0, nodesToProcess = []) {
+async function collectNodesToProcess(
+  node: BaseNode,
+  parentPath: string[] = [],
+  depth = 0,
+  nodesToProcess: NodeProcessInfo[] = [],
+): Promise<void> {
   // Skip invisible nodes
-  if (node.visible === false) return;
+  if ("visible" in node && node.visible === false) return;
 
   // Get the path to this node
   const nodePath = [...parentPath, node.name || `Unnamed ${node.type}`];
@@ -2038,7 +2378,11 @@ async function collectNodesToProcess(node, parentPath = [], depth = 0, nodesToPr
 }
 
 // Process a single text node
-async function processTextNode(node, parentPath, depth) {
+async function processTextNode(
+  node: BaseNode,
+  parentPath: string[],
+  depth: number,
+): Promise<SafeTextNode | null> {
   if (node.type !== "TEXT") return null;
 
   try {
@@ -2102,14 +2446,19 @@ async function processTextNode(node, parentPath, depth) {
 }
 
 // A delay function that returns a promise
-function delay(ms) {
+function delay(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 // Keep the original findTextNodes for backward compatibility
-async function findTextNodes(node, parentPath = [], depth = 0, textNodes = []) {
+async function findTextNodes(
+  node: BaseNode,
+  parentPath: string[] = [],
+  depth = 0,
+  textNodes: SafeTextNode[] = [],
+): Promise<void> {
   // Skip invisible nodes
-  if (node.visible === false) return;
+  if ("visible" in node && node.visible === false) return;
 
   // Get the path to this node including its name
   const nodePath = [...parentPath, node.name || `Unnamed ${node.type}`];
@@ -2185,7 +2534,7 @@ async function findTextNodes(node, parentPath = [], depth = 0, textNodes = []) {
 }
 
 // Replace text in a specific node
-async function setMultipleTextContents(params) {
+async function setMultipleTextContents(params: SetMultipleTextContentsParams) {
   const { nodeId, text } = params || {};
   const commandId = params.commandId || generateCommandId();
 
@@ -2217,13 +2566,13 @@ async function setMultipleTextContents(params) {
   );
 
   // Define the results array and counters
-  const results = [];
+  const results: TextReplacementResult[] = [];
   let successCount = 0;
   let failureCount = 0;
 
   // Split text replacements into chunks of 5
   const CHUNK_SIZE = 5;
-  const chunks = [];
+  const chunks: TextReplacement[][] = [];
 
   for (let i = 0; i < text.length; i += CHUNK_SIZE) {
     chunks.push(text.slice(i, i + CHUNK_SIZE));
@@ -2272,96 +2621,102 @@ async function setMultipleTextContents(params) {
     );
 
     // Process replacements within a chunk in parallel
-    const chunkPromises = chunk.map(async (replacement) => {
-      if (!replacement.nodeId || replacement.text === undefined) {
-        console.error(`Missing nodeId or text for replacement`);
-        return {
-          success: false,
-          nodeId: replacement.nodeId || "unknown",
-          error: "Missing nodeId or text in replacement entry",
-        };
-      }
-
-      try {
-        console.log(`Attempting to replace text in node: ${replacement.nodeId}`);
-
-        // Get the text node to update (just to check it exists and get original text)
-        const textNode = await figma.getNodeByIdAsync(replacement.nodeId);
-
-        if (!textNode) {
-          console.error(`Text node not found: ${replacement.nodeId}`);
+    const chunkPromises: Array<Promise<TextReplacementResult>> = chunk.map(
+      async (replacement): Promise<TextReplacementResult> => {
+        if (!replacement.nodeId || replacement.text === undefined) {
+          console.error(`Missing nodeId or text for replacement`);
           return {
             success: false,
-            nodeId: replacement.nodeId,
-            error: `Node not found: ${replacement.nodeId}`,
+            nodeId: replacement.nodeId || "unknown",
+            error: "Missing nodeId or text in replacement entry",
           };
         }
 
-        if (textNode.type !== "TEXT") {
-          console.error(`Node is not a text node: ${replacement.nodeId} (type: ${textNode.type})`);
-          return {
-            success: false,
-            nodeId: replacement.nodeId,
-            error: `Node is not a text node: ${replacement.nodeId} (type: ${textNode.type})`,
-          };
-        }
-
-        // Save original text for the result
-        const originalText = textNode.characters;
-        console.log(`Original text: "${originalText}"`);
-        console.log(`Will translate to: "${replacement.text}"`);
-
-        // Highlight the node before changing text
-        let originalFills;
         try {
-          // Save original fills for restoration later
-          originalFills = JSON.parse(JSON.stringify(textNode.fills));
-          // Apply highlight color (orange with 30% opacity)
-          textNode.fills = [
-            {
-              type: "SOLID",
-              color: { r: 1, g: 0.5, b: 0 },
-              opacity: 0.3,
-            },
-          ];
-        } catch (highlightErr) {
-          console.error(`Error highlighting text node: ${highlightErr.message}`);
-          // Continue anyway, highlighting is just visual feedback
-        }
+          console.log(`Attempting to replace text in node: ${replacement.nodeId}`);
 
-        // Use the existing setTextContent function to handle font loading and text setting
-        await setTextContent({
-          nodeId: replacement.nodeId,
-          text: replacement.text,
-        });
+          // Get the text node to update (just to check it exists and get original text)
+          const textNode = await figma.getNodeByIdAsync(replacement.nodeId);
 
-        // Keep highlight for a moment after text change, then restore original fills
-        if (originalFills) {
-          try {
-            // Use delay function for consistent timing
-            await delay(500);
-            textNode.fills = originalFills;
-          } catch (restoreErr) {
-            console.error(`Error restoring fills: ${restoreErr.message}`);
+          if (!textNode) {
+            console.error(`Text node not found: ${replacement.nodeId}`);
+            return {
+              success: false,
+              nodeId: replacement.nodeId,
+              error: `Node not found: ${replacement.nodeId}`,
+            };
           }
-        }
 
-        console.log(`Successfully replaced text in node: ${replacement.nodeId}`);
-        return {
-          success: true,
-          nodeId: replacement.nodeId,
-          originalText: originalText,
-          translatedText: replacement.text,
-        };
-      } catch (error) {
-        console.error(`Error replacing text in node ${replacement.nodeId}: ${error.message}`);
-        return {
-          success: false,
-          nodeId: replacement.nodeId,
-          error: `Error applying replacement: ${error.message}`,
-        };
-      }
-    });
+          if (textNode.type !== "TEXT") {
+            console.error(
+              `Node is not a text node: ${replacement.nodeId} (type: ${textNode.type})`,
+            );
+            return {
+              success: false,
+              nodeId: replacement.nodeId,
+              error: `Node is not a text node: ${replacement.nodeId} (type: ${textNode.type})`,
+            };
+          }
+
+          // Save original text for the result
+          const originalText = textNode.characters;
+          console.log(`Original text: "${originalText}"`);
+          console.log(`Will translate to: "${replacement.text}"`);
+
+          // Highlight the node before changing text
+          let originalFills;
+          try {
+            // Save original fills for restoration later
+            originalFills = JSON.parse(JSON.stringify(textNode.fills));
+            // Apply highlight color (orange with 30% opacity)
+            textNode.fills = [
+              {
+                type: "SOLID",
+                color: { r: 1, g: 0.5, b: 0 },
+                opacity: 0.3,
+              },
+            ];
+          } catch (highlightErr) {
+            console.error(`Error highlighting text node: ${errorMessage(highlightErr)}`);
+            // Continue anyway, highlighting is just visual feedback
+          }
+
+          // Use the existing setTextContent function to handle font loading and text setting
+          await setTextContent({
+            nodeId: replacement.nodeId,
+            text: replacement.text,
+          });
+
+          // Keep highlight for a moment after text change, then restore original fills
+          if (originalFills) {
+            try {
+              // Use delay function for consistent timing
+              await delay(500);
+              textNode.fills = originalFills;
+            } catch (restoreErr) {
+              console.error(`Error restoring fills: ${errorMessage(restoreErr)}`);
+            }
+          }
+
+          console.log(`Successfully replaced text in node: ${replacement.nodeId}`);
+          return {
+            success: true,
+            nodeId: replacement.nodeId,
+            originalText: originalText,
+            translatedText: replacement.text,
+          };
+        } catch (error) {
+          console.error(
+            `Error replacing text in node ${replacement.nodeId}: ${errorMessage(error)}`,
+          );
+          return {
+            success: false,
+            nodeId: replacement.nodeId,
+            error: `Error applying replacement: ${errorMessage(error)}`,
+          };
+        }
+      },
+    );
 
     // Wait for all replacements in this chunk to complete
     const chunkResults = await Promise.all(chunkPromises);
@@ -2444,21 +2799,17 @@ function generateCommandId() {
   );
 }
 
-async function getAnnotations(params) {
+async function getAnnotations(params: GetAnnotationsParams) {
   try {
     const { nodeId, includeCategories = true } = params;
 
     // Get categories first if needed
-    let categoriesMap = {};
+    let categoriesMap: Record<string, AnnotationCategory> = {};
     if (includeCategories) {
-      const categories = await figma.annotations.getAnnotationCategoriesAsync();
-      categoriesMap = categories.reduce((map, category) => {
-        map[category.id] = {
-          id: category.id,
-          label: category.label,
-          color: category.color,
-          isPreset: category.isPreset,
-        };
+      const categories =
+        (await figma.annotations.getAnnotationCategoriesAsync()) as AnnotationCategory[];
+      categoriesMap = categories.reduce<Record<string, AnnotationCategory>>((map, category) => {
+        map[category.id] = category;
         return map;
       }, {});
     }
@@ -2470,13 +2821,14 @@ async function getAnnotations(params) {
         throw new Error(`Node not found: ${nodeId}`);
       }
 
-      if (!("annotations" in node)) {
-        throw new Error(`Node type ${node.type} does not support annotations`);
+      const nodeType = node.type;
+      if (!hasAnnotations(node)) {
+        throw new Error(`Node type ${nodeType} does not support annotations`);
       }
 
       // Collect annotations from this node and all its descendants
-      const mergedAnnotations = [];
-      const collect = async (n) => {
+      const mergedAnnotations: Array<{ nodeId: string; annotation: Annotation }> = [];
+      const collect = async (n: BaseNode): Promise<void> => {
         if ("annotations" in n && n.annotations && n.annotations.length > 0) {
           for (const a of n.annotations) {
             mergedAnnotations.push({ nodeId: n.id, annotation: a });
@@ -2503,8 +2855,12 @@ async function getAnnotations(params) {
       return result;
     } else {
       // Get all annotations in the current page
-      const annotations = [];
-      const processNode = async (node) => {
+      const annotations: Array<{
+        nodeId: string;
+        name: string;
+        annotations: ReadonlyArray<Annotation>;
+      }> = [];
+      const processNode = async (node: BaseNode): Promise<void> => {
         if ("annotations" in node && node.annotations && node.annotations.length > 0) {
           annotations.push({
             nodeId: node.id,
@@ -2538,7 +2894,7 @@ async function getAnnotations(params) {
   }
 }
 
-async function setAnnotation(params) {
+async function setAnnotation(params: SetAnnotationParams) {
   try {
     console.log("=== setAnnotation Debug Start ===");
     console.log("Input params:", JSON.stringify(params, null, 2));
@@ -2573,32 +2929,32 @@ async function setAnnotation(params) {
     }
 
     // Validate node supports annotations
-    if (!("annotations" in node)) {
+    const nodeType = node.type;
+    const resolvedNodeId = node.id;
+    if (!hasAnnotations(node)) {
       console.error("Node annotation support check failed:", {
-        nodeType: node.type,
-        nodeId: node.id,
+        nodeType,
+        nodeId: resolvedNodeId,
       });
       return {
         success: false,
-        error: `Node type ${node.type} does not support annotations`,
+        error: `Node type ${nodeType} does not support annotations`,
       };
     }
 
-    // Create the annotation object
-    const newAnnotation: Record<string, unknown> = {
+    // Annotation fields are readonly in the Figma typings, so construct the
+    // complete value up front instead of mutating it afterward.
+    const newAnnotation: Annotation = {
       labelMarkdown,
+      ...(categoryId ? { categoryId } : {}),
+      ...(properties && properties.length > 0 ? { properties } : {}),
     };
 
-    // Validate and add categoryId if provided
     if (categoryId) {
       console.log("Adding categoryId to annotation:", categoryId);
-      newAnnotation.categoryId = categoryId;
     }
-
-    // Validate and add properties if provided
-    if (properties && Array.isArray(properties) && properties.length > 0) {
+    if (properties && properties.length > 0) {
       console.log("Adding properties to annotation:", JSON.stringify(properties, null, 2));
-      newAnnotation.properties = properties;
     }
 
     // Log current annotations before update
@@ -2621,11 +2977,11 @@ async function setAnnotation(params) {
   } catch (error) {
     console.error("=== setAnnotation Error ===");
     console.error("Error details:", {
-      message: error.message,
-      stack: error.stack,
+      message: errorMessage(error),
+      stack: errorStack(error),
       params: JSON.stringify(params, null, 2),
     });
-    return { success: false, error: error.message };
+    return { success: false, error: errorMessage(error) };
   }
 }
 
@@ -2636,11 +2992,14 @@ async function setAnnotation(params) {
  * @param {Array<string>} params.types - Array of node types to find (e.g. ['COMPONENT', 'FRAME'])
  * @returns {Object} - Object containing found nodes
  */
-async function scanNodesByTypes(params) {
+async function scanNodesByTypes(params: ScanNodesByTypesParams) {
   console.log(`Starting to scan nodes by types from node ID: ${params.nodeId}`);
   const { nodeId, types = [] } = params || {};
 
-  if (!types || types.length === 0) {
+  if (!nodeId) {
+    throw new Error("Missing nodeId parameter");
+  }
+  if (types.length === 0) {
     throw new Error("No types specified to search for");
   }
 
@@ -2651,7 +3010,7 @@ async function scanNodesByTypes(params) {
   }
 
   // Simple implementation without chunking
-  const matchingNodes = [];
+  const matchingNodes: MatchingNode[] = [];
 
   // Send a single progress update to notify start
   const commandId = generateCommandId();
@@ -2696,23 +3055,28 @@ async function scanNodesByTypes(params) {
  * @param {Array<string>} types - Array of node types to find
  * @param {Array} matchingNodes - Array to store found nodes
  */
-async function findNodesByTypes(node, types, matchingNodes = []) {
+async function findNodesByTypes(
+  node: BaseNode,
+  types: string[],
+  matchingNodes: MatchingNode[] = [],
+): Promise<void> {
   // Skip invisible nodes
-  if (node.visible === false) return;
+  if ("visible" in node && node.visible === false) return;
 
   // Check if this node is one of the specified types
   if (types.includes(node.type)) {
     // Create a minimal representation with just ID, type and bbox
+    const sceneNode = isSceneNode(node) ? node : null;
     matchingNodes.push({
       id: node.id,
       name: node.name || `Unnamed ${node.type}`,
       type: node.type,
       // Basic bounding box info
       bbox: {
-        x: typeof node.x === "number" ? node.x : 0,
-        y: typeof node.y === "number" ? node.y : 0,
-        width: typeof node.width === "number" ? node.width : 0,
-        height: typeof node.height === "number" ? node.height : 0,
+        x: sceneNode?.x ?? 0,
+        y: sceneNode?.y ?? 0,
+        width: sceneNode?.width ?? 0,
+        height: sceneNode?.height ?? 0,
       },
     });
   }
@@ -2726,7 +3090,7 @@ async function findNodesByTypes(node, types, matchingNodes = []) {
 }
 
 // Set multiple annotations with async progress updates
-async function setMultipleAnnotations(params) {
+async function setMultipleAnnotations(params: SetMultipleAnnotationsParams) {
   console.log("=== setMultipleAnnotations Debug Start ===");
   console.log("Input params:", JSON.stringify(params, null, 2));
 
@@ -2739,7 +3103,7 @@ async function setMultipleAnnotations(params) {
 
   console.log(`Processing ${annotations.length} annotations for node ${nodeId}`);
 
-  const results = [];
+  const results: AnnotationApplyResult[] = [];
   let successCount = 0;
   let failureCount = 0;
 
@@ -2786,13 +3150,13 @@ async function setMultipleAnnotations(params) {
       const errorResult = {
         success: false,
         nodeId: annotation.nodeId,
-        error: error.message,
+        error: errorMessage(error),
       };
       results.push(errorResult);
       console.error(`✗ Annotation ${i + 1} failed with error:`, error);
       console.error("Error details:", {
-        message: error.message,
-        stack: error.stack,
+        message: errorMessage(error),
+        stack: errorStack(error),
       });
     }
   }
@@ -2812,7 +3176,7 @@ async function setMultipleAnnotations(params) {
   return summary;
 }
 
-async function deleteMultipleNodes(params) {
+async function deleteMultipleNodes(params: NodeIdsParams) {
   const { nodeIds } = params || {};
   const commandId = generateCommandId();
 
@@ -2838,13 +3202,13 @@ async function deleteMultipleNodes(params) {
     { totalNodes: nodeIds.length },
   );
 
-  const results = [];
+  const results: DeleteNodeResult[] = [];
   let successCount = 0;
   let failureCount = 0;
 
   // Process nodes in chunks of 5 to avoid overwhelming Figma
   const CHUNK_SIZE = 5;
-  const chunks = [];
+  const chunks: string[][] = [];
 
   for (let i = 0; i < nodeIds.length; i += CHUNK_SIZE) {
     chunks.push(nodeIds.slice(i, i + CHUNK_SIZE));
@@ -2891,44 +3255,46 @@ async function deleteMultipleNodes(params) {
     );
 
     // Process deletions within a chunk in parallel
-    const chunkPromises = chunk.map(async (nodeId) => {
-      try {
-        const node = await figma.getNodeByIdAsync(nodeId);
+    const chunkPromises: Array<Promise<DeleteNodeResult>> = chunk.map(
+      async (nodeId): Promise<DeleteNodeResult> => {
+        try {
+          const node = await figma.getNodeByIdAsync(nodeId);
 
-        if (!node) {
-          console.error(`Node not found: ${nodeId}`);
+          if (!node) {
+            console.error(`Node not found: ${nodeId}`);
+            return {
+              success: false,
+              nodeId: nodeId,
+              error: `Node not found: ${nodeId}`,
+            };
+          }
+
+          // Save node info before deleting
+          const nodeInfo = {
+            id: node.id,
+            name: node.name,
+            type: node.type,
+          };
+
+          // Delete the node
+          node.remove();
+
+          console.log(`Successfully deleted node: ${nodeId}`);
+          return {
+            success: true,
+            nodeId: nodeId,
+            nodeInfo: nodeInfo,
+          };
+        } catch (error) {
+          console.error(`Error deleting node ${nodeId}: ${errorMessage(error)}`);
           return {
             success: false,
             nodeId: nodeId,
-            error: `Node not found: ${nodeId}`,
+            error: errorMessage(error),
           };
         }
-
-        // Save node info before deleting
-        const nodeInfo = {
-          id: node.id,
-          name: node.name,
-          type: node.type,
-        };
-
-        // Delete the node
-        node.remove();
-
-        console.log(`Successfully deleted node: ${nodeId}`);
-        return {
-          success: true,
-          nodeId: nodeId,
-          nodeInfo: nodeInfo,
-        };
-      } catch (error) {
-        console.error(`Error deleting node ${nodeId}: ${error.message}`);
-        return {
-          success: false,
-          nodeId: nodeId,
-          error: error.message,
-        };
-      }
-    });
+      },
+    );
 
     // Wait for all deletions in this chunk to complete
     const chunkResults = await Promise.all(chunkPromises);
@@ -3002,10 +3368,10 @@ async function deleteMultipleNodes(params) {
 }
 
 // Implementation for getInstanceOverrides function
-async function getInstanceOverrides(instanceNode = null) {
+async function getInstanceOverrides(instanceNode: BaseNode | null = null) {
   console.log("=== getInstanceOverrides called ===");
 
-  let sourceInstance = null;
+  let sourceInstance: InstanceNode | null = null;
 
   // Check if an instance node was passed directly
   if (instanceNode) {
@@ -3034,7 +3400,9 @@ async function getInstanceOverrides(instanceNode = null) {
     }
 
     // Filter for instances in the selection
-    const instances = selection.filter((node) => node.type === "INSTANCE");
+    const instances = selection.filter(
+      (node: SceneNode): node is InstanceNode => node.type === "INSTANCE",
+    );
 
     if (instances.length === 0) {
       console.log("No instances found in selection");
@@ -3077,10 +3445,10 @@ async function getInstanceOverrides(instanceNode = null) {
     return returnData;
   } catch (error) {
     console.error("Error in getInstanceOverrides:", error);
-    figma.notify(`Error: ${error.message}`);
+    figma.notify(`Error: ${errorMessage(error)}`);
     return {
       success: false,
-      message: `Error: ${error.message}`,
+      message: `Error: ${errorMessage(error)}`,
     };
   }
 }
@@ -3090,8 +3458,8 @@ async function getInstanceOverrides(instanceNode = null) {
  * @param {string[]} targetNodeIds - Array of instance node IDs
  * @returns {instanceNode[]} targetInstances - Array of target instances
  */
-async function getValidTargetInstances(targetNodeIds) {
-  let targetInstances = [];
+async function getValidTargetInstances(targetNodeIds: string[]): Promise<TargetInstancesResult> {
+  const targetInstances: InstanceNode[] = [];
 
   // Handle array of instances or single instance
   if (Array.isArray(targetNodeIds)) {
@@ -3119,7 +3487,7 @@ async function getValidTargetInstances(targetNodeIds) {
  * @param {string} sourceInstanceId - Source instance ID
  * @returns {Promise<Object>} - Validation result with source instance data or error
  */
-async function getSourceInstanceData(sourceInstanceId) {
+async function getSourceInstanceData(sourceInstanceId: string): Promise<SourceInstanceDataResult> {
   if (!sourceInstanceId) {
     return { success: false, message: "Missing source instance ID" };
   }
@@ -3164,7 +3532,10 @@ async function getSourceInstanceData(sourceInstanceId) {
  * @param {Object} sourceResult - Source instance data from getSourceInstanceData
  * @returns {Promise<Object>} - Result of the set operation
  */
-async function setInstanceOverrides(targetInstances, sourceResult) {
+async function setInstanceOverrides(
+  targetInstances: InstanceNode[],
+  sourceResult: Extract<SourceInstanceDataResult, { success: true }>,
+) {
   try {
     const { sourceInstance, mainComponent, overrides } = sourceResult;
 
@@ -3175,7 +3546,7 @@ async function setInstanceOverrides(targetInstances, sourceResult) {
     console.log(`Overrides:`, overrides);
 
     // Process all instances
-    const results = [];
+    const results: InstanceOverrideResult[] = [];
     let totalAppliedCount = 0;
 
     for (const targetInstance of targetInstances) {
@@ -3202,7 +3573,7 @@ async function setInstanceOverrides(targetInstances, sourceResult) {
             success: false,
             instanceId: targetInstance.id,
             instanceName: targetInstance.name,
-            message: `Error: ${error.message}`,
+            message: `Error: ${errorMessage(error)}`,
           });
         }
 
@@ -3260,9 +3631,12 @@ async function setInstanceOverrides(targetInstances, sourceResult) {
                 }
                 overrideNode.characters = sourceNode.characters;
                 fieldApplied = true;
-              } else if (field in overrideNode) {
-                // Direct property assignment
-                overrideNode[field] = sourceNode[field];
+              } else if (field in overrideNode && field in sourceNode) {
+                // NodeChangeProperty is intentionally dynamic. Keep the dynamic assignment
+                // at this protocol boundary instead of weakening the rest of the file.
+                const targetRecord = overrideNode as unknown as Record<string, unknown>;
+                const sourceRecord = sourceNode as unknown as Record<string, unknown>;
+                targetRecord[field] = sourceRecord[field];
                 fieldApplied = true;
               }
             } catch (fieldError) {
@@ -3298,7 +3672,7 @@ async function setInstanceOverrides(targetInstances, sourceResult) {
           success: false,
           instanceId: targetInstance.id,
           instanceName: targetInstance.name,
-          message: `Error: ${instanceError.message}`,
+          message: `Error: ${errorMessage(instanceError)}`,
         });
       }
     }
@@ -3321,14 +3695,18 @@ async function setInstanceOverrides(targetInstances, sourceResult) {
     }
   } catch (error) {
     console.error("Error in setInstanceOverrides:", error);
-    const message = `Error: ${error.message}`;
+    const message = `Error: ${errorMessage(error)}`;
     figma.notify(message);
     return { success: false, message };
   }
 }
 
-async function setLayoutMode(params) {
+async function setLayoutMode(params: LayoutModeParams) {
   const { nodeId, layoutMode = "NONE", layoutWrap = "NO_WRAP" } = params || {};
+
+  if (!nodeId) {
+    throw new Error("Missing nodeId parameter");
+  }
 
   // Get the target node
   const node = await figma.getNodeByIdAsync(nodeId);
@@ -3362,8 +3740,12 @@ async function setLayoutMode(params) {
   };
 }
 
-async function setPadding(params) {
+async function setPadding(params: PaddingParams) {
   const { nodeId, paddingTop, paddingRight, paddingBottom, paddingLeft } = params || {};
+
+  if (!nodeId) {
+    throw new Error("Missing nodeId parameter");
+  }
 
   // Get the target node
   const node = await figma.getNodeByIdAsync(nodeId);
@@ -3402,8 +3784,12 @@ async function setPadding(params) {
   };
 }
 
-async function setAxisAlign(params) {
+async function setAxisAlign(params: AxisAlignParams) {
   const { nodeId, primaryAxisAlignItems, counterAxisAlignItems } = params || {};
+
+  if (!nodeId) {
+    throw new Error("Missing nodeId parameter");
+  }
 
   // Get the target node
   const node = await figma.getNodeByIdAsync(nodeId);
@@ -3461,8 +3847,12 @@ async function setAxisAlign(params) {
   };
 }
 
-async function setLayoutSizing(params) {
+async function setLayoutSizing(params: LayoutSizingParams) {
   const { nodeId, layoutSizingHorizontal, layoutSizingVertical } = params || {};
+
+  if (!nodeId) {
+    throw new Error("Missing nodeId parameter");
+  }
 
   // Get the target node
   const node = await figma.getNodeByIdAsync(nodeId);
@@ -3534,12 +3924,16 @@ async function setLayoutSizing(params) {
   };
 }
 
-async function setItemSpacing(params) {
+async function setItemSpacing(params: ItemSpacingParams) {
   const { nodeId, itemSpacing, counterAxisSpacing } = params || {};
 
   // Validate that at least one spacing parameter is provided
   if (itemSpacing === undefined && counterAxisSpacing === undefined) {
     throw new Error("At least one of itemSpacing or counterAxisSpacing must be provided");
+  }
+
+  if (!nodeId) {
+    throw new Error("Missing nodeId parameter");
   }
 
   // Get the target node
@@ -3595,7 +3989,7 @@ async function setItemSpacing(params) {
   };
 }
 
-async function setDefaultConnector(params) {
+async function setDefaultConnector(params: SetDefaultConnectorParams) {
   const { connectorId } = params || {};
 
   // If connectorId is provided, search and set by that ID (do not check existing storage)
@@ -3648,12 +4042,12 @@ async function setDefaultConnector(params) {
           }
         } catch (error) {
           console.log(
-            `Error finding stored connector: ${error.message}. Will try to set a new one.`,
+            `Error finding stored connector: ${errorMessage(error)}. Will try to set a new one.`,
           );
         }
       }
     } catch (error) {
-      console.log(`Error checking for existing connector: ${error.message}`);
+      console.log(`Error checking for existing connector: ${errorMessage(error)}`);
     }
 
     // If there is no stored default connector or it is invalid, find one in the current page
@@ -3683,12 +4077,12 @@ async function setDefaultConnector(params) {
       }
     } catch (error) {
       // Error occurred while running findAllWithCriteria
-      throw new Error(`Failed to find a connector: ${error.message}`);
+      throw new Error(`Failed to find a connector: ${errorMessage(error)}`);
     }
   }
 }
 
-async function createCursorNode(targetNodeId) {
+async function createCursorNode(targetNodeId: string) {
   const svgString = `<svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
     <path d="M16 8V35.2419L22 28.4315L27 39.7823C27 39.7823 28.3526 40.2722 29 39.7823C29.6474 39.2924 30.2913 38.3057 30 37.5121C28.6247 33.7654 25 26.1613 25 26.1613H32L16 8Z" fill="#202125" />
   </svg>`;
@@ -3723,7 +4117,7 @@ async function createCursorNode(targetNodeId) {
     importedNode.name = "TTF_Connector / Mouse Cursor";
     importedNode.resize(48, 48);
 
-    const cursorNode = importedNode.findOne((node) => node.type === "VECTOR");
+    const cursorNode = importedNode.findOne((node: SceneNode) => node.type === "VECTOR");
     if (cursorNode?.type === "VECTOR") {
       cursorNode.fills = [
         {
@@ -3816,11 +4210,11 @@ async function createCursorNode(targetNodeId) {
     return { id: importedNode.id, node: importedNode };
   } catch (error) {
     console.error("Error creating cursor from SVG:", error);
-    return { id: null, node: null, error: error.message };
+    return { id: null, node: null, error: errorMessage(error) };
   }
 }
 
-async function createConnections(params) {
+async function createConnections(params: CreateConnectionsParams) {
   if (!params || !params.connections || !Array.isArray(params.connections)) {
     throw new Error("Missing or invalid connections parameter");
   }
@@ -3857,7 +4251,7 @@ async function createConnections(params) {
   }
 
   // Results array for connection creation
-  const results = [];
+  const results: Array<Record<string, unknown>> = [];
   let processedCount = 0;
   const totalCount = connections.length;
 
@@ -3940,7 +4334,7 @@ async function createConnections(params) {
                 await figma.loadFontAsync({ family: "System", style: "Regular" });
               } catch (systemFontError) {
                 // If all font loading attempts fail, throw error
-                throw new Error(`Failed to load any font: ${fontError.message}`);
+                throw new Error(`Failed to load any font: ${errorMessage(fontError)}`);
               }
             }
           }
@@ -3955,7 +4349,7 @@ async function createConnections(params) {
             startNodeId: originalStartId,
             endNodeId: originalEndId,
             text: "",
-            textError: textError.message,
+            textError: errorMessage(textError),
           });
 
           // Continue to next connection
@@ -3995,11 +4389,11 @@ async function createConnections(params) {
         processedCount / totalCount,
         totalCount,
         processedCount,
-        `Error creating connection: ${error.message}`,
+        `Error creating connection: ${errorMessage(error)}`,
       );
 
       results.push({
-        error: error.message,
+        error: errorMessage(error),
         connectionInfo: connections[i],
       });
     }
@@ -4024,7 +4418,7 @@ async function createConnections(params) {
 }
 
 // Set focus on a specific node
-async function setFocus(params) {
+async function setFocus(params: SetFocusParams) {
   if (!params || !params.nodeId) {
     throw new Error("Missing nodeId parameter");
   }
@@ -4052,7 +4446,7 @@ async function setFocus(params) {
 }
 
 // Set selection to multiple nodes
-async function setSelections(params) {
+async function setSelections(params: SetSelectionsParams) {
   if (!params || !params.nodeIds || !Array.isArray(params.nodeIds)) {
     throw new Error("Missing or invalid nodeIds parameter");
   }
@@ -4062,12 +4456,12 @@ async function setSelections(params) {
   }
 
   // Get all valid nodes
-  const nodes = [];
-  const notFoundIds = [];
+  const nodes: SceneNode[] = [];
+  const notFoundIds: string[] = [];
 
   for (const nodeId of params.nodeIds) {
     const node = await figma.getNodeByIdAsync(nodeId);
-    if (node) {
+    if (isSceneNode(node)) {
       nodes.push(node);
     } else {
       notFoundIds.push(nodeId);
