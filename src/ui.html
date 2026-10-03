@@ -1,381 +1,427 @@
 <!doctype html>
-<html>
+<html lang="en">
   <head>
     <meta charset="utf-8" />
-    <title>figma mcp</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Phoenix Figma MCP</title>
     <style>
-      body {
-        font-family:
-          -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-        margin: 0;
-        padding: 20px;
-        color: #e0e0e0;
-        background-color: #1e1e1e;
+      :root {
+        color-scheme: light dark;
+        --bg: var(--figma-color-bg, #18191d);
+        --surface: var(--figma-color-bg-secondary, #222329);
+        --text: var(--figma-color-text, #f2f2f5);
+        --muted: var(--figma-color-text-secondary, #a8a9b5);
+        --border: var(--figma-color-border, #36373f);
+        --accent: #ffb86b;
+        --accent-text: #291b0b;
       }
-
-      .container {
-        display: flex;
-        flex-direction: column;
-        height: 100%;
-      }
-
-      h1 {
-        font-size: 16px;
-        font-weight: 600;
-        margin-bottom: 10px;
-        color: #ffffff;
-      }
-
-      h2 {
-        font-size: 14px;
-        font-weight: 600;
-        margin-top: 20px;
-        margin-bottom: 8px;
-        color: #ffffff;
-      }
-
-      button {
-        background-color: #18a0fb;
-        border: none;
-        color: white;
-        padding: 8px 12px;
-        border-radius: 6px;
-        margin-top: 8px;
-        margin-bottom: 8px;
-        cursor: pointer;
-        font-size: 14px;
-        transition: background-color 0.2s;
-      }
-
-      button:hover {
-        background-color: #0d8ee0;
-      }
-
-      button.secondary {
-        background-color: #3d3d3d;
-        color: #e0e0e0;
-      }
-
-      button.secondary:hover {
-        background-color: #4d4d4d;
-      }
-
-      button.danger {
-        background-color: #dc2626;
-        color: white;
-      }
-
-      button.danger:hover {
-        background-color: #b91c1c;
-      }
-
-      button:disabled {
-        background-color: #333333;
-        color: #666666;
-        cursor: not-allowed;
-      }
-
-      input {
-        border: 1px solid #444444;
-        border-radius: 4px;
-        padding: 8px;
-        margin-bottom: 12px;
-        font-size: 14px;
-        width: 100%;
+      * {
         box-sizing: border-box;
-        background-color: #2d2d2d;
-        color: #e0e0e0;
       }
-
-      label {
-        display: block;
-        margin-bottom: 4px;
-        font-size: 12px;
-        font-weight: 500;
-        color: #cccccc;
-      }
-
-      .status {
-        margin-top: 16px;
-        padding: 12px;
-        border-radius: 6px;
-        font-size: 14px;
-      }
-
-      .status.connected {
-        background-color: #1a472a;
-        color: #4ade80;
-      }
-
-      .status.disconnected {
-        background-color: #471a1a;
-        color: #ff9999;
-      }
-
-      .status.info {
-        background-color: #1a3147;
-        color: #66b3ff;
-      }
-
-      .toggle-container {
-        display: flex;
-        align-items: center;
-        margin-bottom: 12px;
-      }
-
-      .toggle-switch {
-        position: relative;
-        display: inline-block;
-        width: 40px;
-        height: 20px;
-        margin-right: 8px;
-      }
-
-      .toggle-switch input {
-        opacity: 0;
-        width: 0;
-        height: 0;
+      body {
         margin: 0;
+        background: var(--bg);
+        color: var(--text);
+        font:
+          12px/1.5 Inter,
+          -apple-system,
+          BlinkMacSystemFont,
+          "Segoe UI",
+          sans-serif;
       }
-
-      .toggle-slider {
-        position: absolute;
-        cursor: pointer;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background-color: #444444;
-        transition: 0.4s;
-        border-radius: 20px;
+      .container {
+        padding: 20px;
       }
-
-      .toggle-slider:before {
-        position: absolute;
-        content: "";
-        height: 16px;
-        width: 16px;
-        left: 2px;
-        bottom: 2px;
-        background-color: white;
-        transition: 0.4s;
-        border-radius: 50%;
-      }
-
-      input:checked + .toggle-slider {
-        background-color: #18a0fb;
-      }
-
-      input:checked + .toggle-slider:before {
-        transform: translateX(20px);
-      }
-
-      .section {
-        margin-bottom: 24px;
-      }
-
-      .hidden {
-        display: none;
-      }
-
-      .logo {
-        width: 50px;
-        height: 50px;
-      }
-
       .header {
         display: flex;
         align-items: center;
-        margin-bottom: 16px;
+        gap: 12px;
+        margin-bottom: 20px;
       }
-
-      .header-text {
-        margin-left: 12px;
+      .brand-mark {
+        display: grid;
+        place-items: center;
+        flex-shrink: 0;
+        width: 36px;
+        height: 36px;
+        border-radius: 10px;
+        color: var(--accent-text);
+        background: var(--accent);
+        font-size: 21px;
+        font-weight: 800;
       }
-
-      .header-text h1 {
+      h1 {
         margin: 0;
-        font-size: 16px;
+        font-size: 17px;
+        line-height: 1.4;
+        font-weight: 650;
       }
-
-      .header-text p {
-        margin: 4px 0 0 0;
-        font-size: 12px;
-        color: #999999;
+      h2 {
+        margin: 0 0 8px;
+        font-size: 13px;
+        font-weight: 600;
       }
-
+      p {
+        margin: 0 0 12px;
+      }
+      .header p {
+        margin: 2px 0 0;
+        color: var(--muted);
+        font-size: 11px;
+      }
       .tabs {
         display: flex;
-        border-bottom: 1px solid #444444;
-        margin-bottom: 16px;
+        gap: 4px;
+        border-bottom: 1px solid var(--border);
+        margin-bottom: 20px;
       }
-
-      .tab {
-        padding: 8px 16px;
+      button {
+        border: 1px solid transparent;
+        border-radius: 7px;
+        padding: 9px 12px;
+        font: inherit;
+        font-weight: 600;
         cursor: pointer;
-        font-size: 14px;
-        font-weight: 500;
-        color: #999999;
+        background: var(--accent);
+        color: var(--accent-text);
       }
-
+      button:hover {
+        filter: brightness(1.08);
+      }
+      button:disabled {
+        opacity: 0.55;
+        cursor: default;
+      }
+      .tab {
+        flex: 1;
+        border-radius: 0;
+        padding: 10px;
+        border-bottom: 2px solid transparent;
+        background: transparent;
+        color: var(--muted);
+      }
       .tab.active {
-        border-bottom: 2px solid #18a0fb;
-        color: #18a0fb;
+        color: var(--text);
+        border-bottom-color: var(--accent);
       }
-
       .tab-content {
         display: none;
       }
-
       .tab-content.active {
         display: block;
       }
-
-      .link {
-        color: #18a0fb;
-        text-decoration: none;
-        cursor: pointer;
+      .secondary,
+      .danger {
+        background: var(--surface);
+        color: var(--text);
+        border-color: var(--border);
       }
-
-      .link:hover {
-        text-decoration: underline;
+      .primary,
+      .danger {
+        width: 100%;
       }
-
-      .header-logo {
-        padding: 16px;
-        border-radius: 16px;
-        background-color: #333;
+      .hidden {
+        display: none !important;
       }
-
-      .header-logo-image {
-        width: 24px;
-        height: 24px;
-        object-fit: contain;
+      .section {
+        margin-bottom: 20px;
       }
-      /* Progress styles */
+      .status {
+        position: relative;
+        padding: 12px 12px 12px 30px;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        background: var(--surface);
+        overflow-wrap: anywhere;
+      }
+      .status::before {
+        content: "";
+        position: absolute;
+        left: 12px;
+        top: 18px;
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: var(--muted);
+      }
+      .status.connected::before {
+        background: #35b879;
+      }
+      .status.info::before {
+        background: var(--accent);
+      }
+      .status.error::before {
+        background: #ec6470;
+      }
+      .fields {
+        display: grid;
+        grid-template-columns: 80px minmax(0, 1fr);
+        gap: 12px;
+        margin: 20px 0 8px;
+      }
+      label {
+        display: block;
+        margin-bottom: 5px;
+        font-weight: 500;
+      }
+      input,
+      textarea {
+        display: block;
+        width: 100%;
+        padding: 9px 10px;
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        background: var(--surface);
+        color: var(--text);
+        font: inherit;
+      }
+      input:disabled {
+        opacity: 0.65;
+      }
+      :focus-visible {
+        outline: 2px solid var(--accent);
+        outline-offset: 2px;
+      }
+      .hint {
+        font-size: 11px;
+        color: var(--muted);
+      }
+      .connection-hint {
+        min-height: 32px;
+        margin-bottom: 14px;
+      }
+      .session-note {
+        margin-top: 12px;
+        text-align: center;
+      }
+      .step-title {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .step-number {
+        display: grid;
+        place-items: center;
+        width: 20px;
+        height: 20px;
+        border-radius: 6px;
+        background: var(--surface);
+        color: var(--muted);
+        font-size: 11px;
+      }
+      code,
+      pre,
+      textarea {
+        font-family: "SFMono-Regular", Consolas, monospace;
+        font-size: 11px;
+      }
+      code {
+        overflow-wrap: anywhere;
+      }
+      pre {
+        margin: 0 0 10px;
+        padding: 10px 12px;
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        background: var(--surface);
+        overflow-x: auto;
+      }
+      textarea {
+        resize: vertical;
+        line-height: 1.55;
+        margin: 10px 0;
+        min-height: 166px;
+      }
+      .progress-track {
+        height: 5px;
+        margin: 10px 0 6px;
+        border-radius: 3px;
+        background: var(--border);
+        overflow: hidden;
+      }
+      #progress-bar {
+        width: 0%;
+        height: 100%;
+        background: var(--accent);
+        transition: width 0.2s;
+      }
+      .progress-meta {
+        display: flex;
+        justify-content: space-between;
+        color: var(--muted);
+        font-size: 11px;
+      }
+      #progress-message {
+        overflow-wrap: anywhere;
+      }
       .operation-complete {
-        color: #4ade80;
+        color: var(--figma-color-text-success, #35b879);
       }
       .operation-error {
-        color: #ff9999;
+        color: var(--figma-color-text-danger, #ec6470);
+      }
+      .footer {
+        padding-top: 12px;
+        border-top: 1px solid var(--border);
+      }
+      a {
+        color: var(--text);
+        text-underline-offset: 3px;
+      }
+      @media (max-width: 340px) {
+        .container {
+          padding: 16px;
+        }
+        h1 {
+          font-size: 15px;
+        }
+        .brand-mark {
+          width: 30px;
+          height: 30px;
+        }
       }
     </style>
   </head>
-
   <body>
-    <div class="container">
-      <div class="header">
-        <div class="header-text">
-          <h1>Figma MCP Plugin</h1>
-          <p>Connect Figma to AI agents using MCP</p>
+    <main class="container">
+      <header class="header">
+        <div class="brand-mark" aria-hidden="true">P</div>
+        <div>
+          <h1>Phoenix Figma MCP</h1>
+          <p>Your open Figma file, connected to AI.</p>
         </div>
-      </div>
-
-      <div class="tabs">
-        <div id="tab-connection" class="tab active">Connection</div>
-        <div id="tab-about" class="tab">About</div>
-      </div>
-
-      <div id="content-connection" class="tab-content active">
-        <div class="section">
-          <div style="margin-bottom: 16px">
-            <button id="btn-connect" class="primary" style="width: 100%">Connect</button>
+      </header>
+      <nav class="tabs" role="tablist" aria-label="Plugin">
+        <button
+          type="button"
+          id="tab-connection"
+          class="tab active"
+          role="tab"
+          aria-selected="true"
+          aria-controls="content-connection"
+        >
+          Connection
+        </button>
+        <button
+          type="button"
+          id="tab-setup"
+          class="tab"
+          role="tab"
+          tabindex="-1"
+          aria-selected="false"
+          aria-controls="content-setup"
+        >
+          Setup
+        </button>
+      </nav>
+      <section
+        id="content-connection"
+        class="tab-content active"
+        role="tabpanel"
+        aria-labelledby="tab-connection"
+      >
+        <div id="connection-status" class="status disconnected" role="status" aria-live="polite">
+          Disconnected. Start the local relay to connect.
+        </div>
+        <form id="connection-form" class="section">
+          <div class="fields">
+            <div id="port-container">
+              <label for="port">Port</label>
+              <input type="number" id="port" value="3055" min="1" max="65535" required />
+            </div>
+            <div id="channel-container">
+              <label for="channel">Channel</label>
+              <input
+                type="text"
+                id="channel"
+                placeholder="phoenix-figma"
+                value="phoenix-figma"
+                spellcheck="false"
+                autocomplete="off"
+              />
+            </div>
           </div>
-
-          <div id="port-container">
-            <label for="port">WebSocket Server Port</label>
-            <input type="number" id="port" placeholder="3055" value="3055" min="1024" max="65535" />
-          </div>
-
-          <div id="channel-container">
-            <label for="channel">Channel</label>
-            <input type="text" id="channel" placeholder="cursor-figma" value="cursor-figma" />
-          </div>
-        </div>
-
-        <div id="connection-status" class="status disconnected">
-          Not connected to Cursor MCP server
-        </div>
-
-        <div id="mcp-config" class="section hidden">
-          <h2>MCP Configuration</h2>
-          <p>Copy this configuration to your <code>mcp.json</code> file in Cursor:</p>
-          <textarea
-            id="mcp-json"
-            rows="5"
-            readonly
-            style="
-              width: 100%;
-              background: #2d2d2d;
-              color: #e0e0e0;
-              padding: 12px;
-              border: 1px solid #444444;
-              border-radius: 4px;
-              font-family: monospace;
-              margin-bottom: 8px;
-            "
-          ></textarea>
-          <button id="btn-copy" class="secondary">Copy to Clipboard</button>
-        </div>
-
-        <!-- Add Progress Bar Section -->
-        <div id="progress-container" class="section hidden">
-          <h2>Operation Progress</h2>
+          <p id="connection-hint" class="hint connection-hint">
+            Use the same channel in your MCP client. The defaults work out of the box.
+          </p>
+          <button type="submit" id="btn-connect" class="primary">Connect</button>
+          <p class="hint session-note">Keep this panel open while you work.</p>
+        </form>
+        <div id="progress-container" class="section hidden" role="status" aria-live="polite">
+          <h2>Current operation</h2>
           <div id="progress-message">No operation in progress</div>
-          <div style="width: 100%; background-color: #444; border-radius: 4px; margin-top: 8px">
+          <div class="progress-track">
             <div
               id="progress-bar"
-              style="
-                width: 0%;
-                height: 8px;
-                background-color: #18a0fb;
-                border-radius: 4px;
-                transition: width 0.3s;
-              "
+              role="progressbar"
+              aria-label="Operation progress"
+              aria-valuemin="0"
+              aria-valuemax="100"
+              aria-valuenow="0"
             ></div>
           </div>
-          <div
-            style="display: flex; justify-content: space-between; margin-top: 4px; font-size: 12px"
-          >
-            <div id="progress-status">Not started</div>
-            <div id="progress-percentage">0%</div>
+          <div class="progress-meta">
+            <span id="progress-status">Not started</span>
+            <span id="progress-percentage">0%</span>
           </div>
         </div>
-      </div>
-
-      <div id="content-about" class="tab-content">
-        <div class="section">
-          <h2>About Figma MCP</h2>
-          <p>
-            Connects Cursor to the file open in Figma Desktop through a local WebSocket relay — read
-            the document tree, export nodes, and create or edit design elements from your editor. No
-            Figma API token required.
-            <a class="link" onclick="window.open(`https://github.com/mhue26/figma-mcp`, '_blank')"
-              >GitHub</a
-            >
-          </p>
-
-          <h2>How to Use</h2>
-          <ol>
-            <li>
-              Add the MCP server to Cursor (<code>mcp.json</code> →
-              <code>node …/src/server.ts</code>)
-            </li>
-            <li>Run <code>npm run socket</code> in a terminal from the figma-mcp folder</li>
-            <li>Click Connect here (default port 3055, channel <code>cursor-figma</code>)</li>
-            <li>
-              Just start using Figma tools in Cursor — the server auto-joins the same channel. Only
-              call <code>join_channel</code> if you changed the channel above.
-            </li>
-          </ol>
+        <div class="footer hint">
+          First time here? Open
+          <button type="button" id="btn-setup" class="secondary">Setup</button>
+          for the two steps to get started.
         </div>
-      </div>
-    </div>
-
+      </section>
+      <section id="content-setup" class="tab-content" role="tabpanel" aria-labelledby="tab-setup">
+        <div class="section">
+          <h2 class="step-title"><span class="step-number">1</span> Start the relay</h2>
+          <p class="hint">In the cloned project folder, with Node.js 24+ and pnpm installed:</p>
+          <pre><code>pnpm install --frozen-lockfile
+pnpm run socket</code></pre>
+          <p class="hint">Leave the terminal running.</p>
+        </div>
+        <div id="mcp-config" class="section">
+          <h2 class="step-title"><span class="step-number">2</span> Add your MCP server</h2>
+          <p class="hint">
+            Paste this into your client's MCP config. In Cursor, use
+            <code>~/.cursor/mcp.json</code>.
+          </p>
+          <label for="server-path">Absolute path to <code>src/server.ts</code></label>
+          <input
+            type="text"
+            id="server-path"
+            placeholder="C:/projects/phoenix-figma-mcp/src/server.ts"
+            spellcheck="false"
+            autocomplete="off"
+          />
+          <textarea
+            id="mcp-json"
+            rows="9"
+            readonly
+            aria-label="MCP configuration"
+            spellcheck="false"
+          ></textarea>
+          <button type="button" id="btn-copy" class="secondary">Copy config</button>
+          <p class="hint" style="margin-top: 10px">
+            Reload MCP servers, then connect in the Connection tab.
+          </p>
+        </div>
+        <div class="footer hint">
+          Read, export and edit the open file. No Figma API token required.
+          <a
+            href="https://github.com/mirasayon/phoenix-figma-mcp"
+            target="_blank"
+            rel="noopener noreferrer"
+            >Guide on GitHub</a
+          >
+        </div>
+      </section>
+    </main>
     <script>
       // WebSocket connection state
       const state = {
         connected: false,
+        connecting: false,
+        connectionTimer: null,
         socket: null,
         serverPort: 3055,
         pendingRequests: new Map(),
@@ -383,11 +429,12 @@
       };
 
       // Default channel shared with the MCP server (see DEFAULT_CHANNEL in server.ts).
-      const DEFAULT_CHANNEL = "cursor-figma";
+      const DEFAULT_CHANNEL = "phoenix-figma";
 
       // UI Elements
       const portInput = document.getElementById("port");
       const channelInput = document.getElementById("channel");
+      const serverPathInput = document.getElementById("server-path");
       const connectButton = document.getElementById("btn-connect");
       const connectionStatus = document.getElementById("connection-status");
 
@@ -401,37 +448,33 @@
       const progressMessage = document.getElementById("progress-message");
       const progressStatus = document.getElementById("progress-status");
       const progressPercentage = document.getElementById("progress-percentage");
+      let progressHideTimer = null;
 
       // Initialize UI
-      function updateConnectionStatus(isConnected, message) {
+      function updateConnectionStatus(isConnected, message, tone) {
         state.connected = isConnected;
 
-        let statusMessage =
+        const statusMessage =
           message ||
-          (isConnected ? "Connected to Cursor MCP server" : "Not connected to Cursor MCP server");
-
-        // Add instructions for localhost when disconnected
-        if (!isConnected) {
-          statusMessage += " Run npm run socket in the project folder, then connect again.";
-        }
+          (isConnected
+            ? `Connected to relay · ${state.channel}`
+            : "Disconnected. Start pnpm run socket, then connect.");
 
         connectionStatus.textContent = statusMessage;
-        connectionStatus.className = `status ${isConnected ? "connected" : "disconnected"}`;
+        connectionStatus.className = `status ${tone || (isConnected ? "connected" : "disconnected")}`;
 
         // Update connect button text and style based on connection state
-        connectButton.textContent = isConnected ? "Disconnect" : "Connect";
+        connectButton.textContent = state.connecting
+          ? "Connecting…"
+          : isConnected
+            ? "Disconnect"
+            : "Connect";
         connectButton.className = isConnected ? "danger" : "primary";
-        portInput.disabled = isConnected;
-        if (channelInput) channelInput.disabled = isConnected;
-
-        // Show/hide MCP config section
-        const mcpConfig = document.getElementById("mcp-config");
-        mcpConfig.className = `section ${isConnected ? "" : "hidden"}`;
-
-        // Update MCP config text when showing
-        if (isConnected) {
-          updateMcpConfig();
-        }
+        connectButton.disabled = state.connecting;
+        portInput.disabled = isConnected || state.connecting;
+        channelInput.disabled = isConnected || state.connecting;
+        if (!isConnected) resetProgressUI();
+        updateMcpConfig();
       }
 
       // Connect to WebSocket server
@@ -445,22 +488,37 @@
             return;
           }
 
+          if (!Number.isInteger(port) || port < 1 || port > 65535) {
+            updateConnectionStatus(false, "Enter a port between 1 and 65535.", "error");
+            return;
+          }
+
           state.serverPort = port;
+          state.channel = channelInput.value.trim() || DEFAULT_CHANNEL;
+          channelInput.value = state.channel;
+          state.connecting = true;
+          updateConnectionStatus(false, "Connecting to the local relay…", "info");
           const wsUrl = `ws://localhost:${port}`;
 
           const socket = new WebSocket(wsUrl);
           state.socket = socket;
+          state.connectionTimer = setTimeout(() => {
+            if (state.socket !== socket) return;
+            disconnectFromServer();
+            updateConnectionStatus(
+              false,
+              "Connection timed out. Check that pnpm run socket is running.",
+              "error",
+            );
+          }, 10000);
 
           socket.onopen = () => {
             if (state.socket !== socket) return;
-            // Phase 0: default to the shared channel the MCP server auto-joins.
-            // Still editable for isolated/parallel sessions; generateChannelName()
-            // remains available below if a random channel is ever wanted.
-            const channelName = (channelInput && channelInput.value.trim()) || DEFAULT_CHANNEL;
+            const channelName = state.channel;
             console.log("Joining channel:", channelName);
             state.channel = channelName;
 
-            // Join the channel using the same format as App.tsx
+            // Join the channel shared with the MCP client.
             socket.send(
               JSON.stringify({
                 type: "join",
@@ -477,17 +535,29 @@
 
               if (data.type === "system") {
                 // Successfully joined channel
-                if (data.message && data.message.result) {
-                  state.connected = true;
+                if (data.message && data.message.result && data.channel === state.channel) {
+                  clearTimeout(state.connectionTimer);
+                  state.connecting = false;
                   const channelName = data.channel;
-                  updateConnectionStatus(true, `Connected to server in channel: ${channelName}`);
+                  updateConnectionStatus(true, `Connected to relay · ${channelName}`);
+
+                  parent.postMessage(
+                    {
+                      pluginMessage: {
+                        type: "update-settings",
+                        serverPort: port,
+                        channel: channelName,
+                      },
+                    },
+                    "*",
+                  );
 
                   // Notify the plugin code
                   parent.postMessage(
                     {
                       pluginMessage: {
                         type: "notify",
-                        message: `Connected to Cursor MCP server on port ${port} in channel: ${channelName}`,
+                        message: `Phoenix Figma MCP connected on port ${port} · ${channelName}`,
                       },
                     },
                     "*",
@@ -496,7 +566,7 @@
               } else if (data.type === "error") {
                 console.error("Error:", data.message);
                 disconnectFromServer();
-                updateConnectionStatus(false, `Error: ${data.message}`);
+                updateConnectionStatus(false, `Error: ${data.message}`, "error");
               }
 
               handleSocketMessage(data).catch((error) => console.error("Invalid message:", error));
@@ -507,21 +577,35 @@
 
           socket.onclose = () => {
             if (state.socket !== socket) return;
+            clearTimeout(state.connectionTimer);
+            state.connecting = false;
             state.connected = false;
             state.socket = null;
             rejectPendingRequests();
-            updateConnectionStatus(false, "Disconnected from server");
+            updateConnectionStatus(
+              false,
+              "Relay disconnected. Start pnpm run socket, then reconnect.",
+            );
           };
 
           socket.onerror = (error) => {
             if (state.socket !== socket) return;
             console.error("WebSocket error:", error);
             disconnectFromServer();
-            updateConnectionStatus(false, "Connection error");
+            updateConnectionStatus(
+              false,
+              "Cannot reach the relay. Start pnpm run socket, then reconnect.",
+              "error",
+            );
           };
         } catch (error) {
           console.error("Connection error:", error);
-          updateConnectionStatus(false, `Connection error: ${error.message || "Unknown error"}`);
+          disconnectFromServer();
+          updateConnectionStatus(
+            false,
+            `Connection error: ${error.message || "Unknown error"}`,
+            "error",
+          );
         }
       }
 
@@ -535,14 +619,16 @@
       }
 
       function disconnectFromServer() {
+        clearTimeout(state.connectionTimer);
+        state.connecting = false;
         if (state.socket) {
           const socket = state.socket;
           state.socket = null;
           state.connected = false;
           socket.close();
           rejectPendingRequests();
-          updateConnectionStatus(false, "Disconnected from server");
         }
+        updateConnectionStatus(false);
       }
 
       // Handle messages from the WebSocket
@@ -671,50 +757,55 @@
         return Date.now().toString(36) + Math.random().toString(36).substr(2, 5);
       }
 
-      // Add this function after the generateId() function
-      function generateChannelName() {
-        const characters = "abcdefghijklmnopqrstuvwxyz0123456789";
-        let result = "";
-        for (let i = 0; i < 8; i++) {
-          result += characters.charAt(Math.floor(Math.random() * characters.length));
-        }
-        return result;
-      }
-
       // Tab switching
+      function selectTab(tab) {
+        tabs.forEach((item) => {
+          const selected = item === tab;
+          item.classList.toggle("active", selected);
+          item.setAttribute("aria-selected", String(selected));
+          item.tabIndex = selected ? 0 : -1;
+        });
+        tabContents.forEach((content) => content.classList.remove("active"));
+        document.getElementById(tab.getAttribute("aria-controls")).classList.add("active");
+      }
       tabs.forEach((tab) => {
-        tab.addEventListener("click", () => {
-          tabs.forEach((t) => t.classList.remove("active"));
-          tabContents.forEach((c) => c.classList.remove("active"));
-
-          tab.classList.add("active");
-          const contentId = "content-" + tab.id.split("-")[1];
-          document.getElementById(contentId).classList.add("active");
+        tab.addEventListener("click", () => selectTab(tab));
+        tab.addEventListener("keydown", (event) => {
+          if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") return;
+          event.preventDefault();
+          const next = tabs[(Array.from(tabs).indexOf(tab) + 1) % tabs.length];
+          selectTab(next);
+          next.focus();
         });
       });
+      document.getElementById("btn-setup").addEventListener("click", () => {
+        const tab = document.getElementById("tab-setup");
+        selectTab(tab);
+        tab.focus();
+      });
 
-      // Replace the separate connect/disconnect button listeners with a single toggle
-      connectButton.addEventListener("click", () => {
+      // Submit also handles Enter from either connection field.
+      document.getElementById("connection-form").addEventListener("submit", (event) => {
+        event.preventDefault();
+        if (state.connecting) return;
         if (state.connected) {
-          updateConnectionStatus(false, "Disconnecting...");
-          connectionStatus.className = "status info";
           disconnectFromServer();
         } else {
-          const port = parseInt(portInput.value, 10) || 3055;
-          updateConnectionStatus(false, "Connecting...");
-          connectionStatus.className = "status info";
-          connectToServer(port);
+          connectToServer(Number(portInput.value));
         }
       });
 
       // Function to update progress UI
       function updateProgressUI(progressData) {
+        clearTimeout(progressHideTimer);
         // Show progress container if hidden
         progressContainer.classList.remove("hidden");
 
         // Update progress bar
-        const progress = progressData.progress || 0;
+        const rawProgress = Number(progressData.progress);
+        const progress = Number.isFinite(rawProgress) ? Math.min(100, Math.max(0, rawProgress)) : 0;
         progressBar.style.width = `${progress}%`;
+        progressBar.setAttribute("aria-valuenow", String(progress));
         progressPercentage.textContent = `${progress}%`;
 
         // Update message
@@ -732,7 +823,7 @@
           progressStatus.className = "operation-complete";
 
           // Hide progress container after 5 seconds
-          setTimeout(() => {
+          progressHideTimer = setTimeout(() => {
             progressContainer.classList.add("hidden");
           }, 5000);
         } else if (progressData.status === "error") {
@@ -768,8 +859,10 @@
 
       // Reset progress UI
       function resetProgressUI() {
+        clearTimeout(progressHideTimer);
         progressContainer.classList.add("hidden");
         progressBar.style.width = "0%";
+        progressBar.setAttribute("aria-valuenow", "0");
         progressMessage.textContent = "No operation in progress";
         progressStatus.textContent = "Not started";
         progressStatus.className = "";
@@ -778,17 +871,33 @@
 
       // Listen for messages from the plugin code
       window.onmessage = (event) => {
-        const message = event.data.pluginMessage;
+        const message = event.data?.pluginMessage;
         if (!message) return;
 
         console.log("Received message from plugin:", message);
 
         switch (message.type) {
+          case "init-settings": {
+            if (state.socket) break;
+            const settings = message.settings || {};
+            if (
+              Number.isInteger(settings.serverPort) &&
+              settings.serverPort > 0 &&
+              settings.serverPort <= 65535
+            ) {
+              portInput.value = String(settings.serverPort);
+            }
+            if (typeof settings.channel === "string" && settings.channel.trim()) {
+              channelInput.value = settings.channel.trim();
+            }
+            updateMcpConfig();
+            break;
+          }
           case "connection-status":
             updateConnectionStatus(message.connected, message.message);
             break;
           case "auto-connect":
-            connectToServer(parseInt(portInput.value, 10) || 3055);
+            connectToServer(Number(portInput.value));
             break;
           case "auto-disconnect":
             disconnectFromServer();
@@ -810,31 +919,58 @@
         }
       };
 
-      // Add this to the script section, after all the other event listeners
-      document.getElementById("btn-copy").addEventListener("click", () => {
+      document.getElementById("btn-copy").addEventListener("click", async () => {
         const textarea = document.getElementById("mcp-json");
-        textarea.select();
-        document.execCommand("copy");
+        let copied = false;
+        try {
+          await navigator.clipboard.writeText(textarea.value);
+          copied = true;
+        } catch {
+          textarea.focus();
+          textarea.select();
+          try {
+            copied = document.execCommand("copy");
+          } catch {}
+        }
         const button = document.getElementById("btn-copy");
-        button.textContent = "Copied!";
+        button.textContent = copied ? "Copied!" : "Select text to copy";
         setTimeout(() => {
-          button.textContent = "Copy to Clipboard";
+          button.textContent = "Copy config";
         }, 2000);
       });
 
-      // Add this function to the script section
       function updateMcpConfig() {
+        const port = Number(portInput.value);
+        const channel = channelInput.value.trim() || DEFAULT_CHANNEL;
+        // Explicit overrides keep this config in sync even if the server has saved settings.
+        const env = { WS_PORT: String(port), WS_CHANNEL: channel };
+
         const mcpConfig = {
           mcpServers: {
-            "figma-mcp-mh": {
+            "phoenix-figma-mcp": {
               command: "node",
-              args: ["/absolute/path/to/figma-mcp/src/server.ts"],
+              args: [
+                (
+                  serverPathInput.value.trim() ||
+                  "/absolute/path/to/phoenix-figma-mcp/src/server.ts"
+                ).replace(/\\/g, "/"),
+              ],
+              env,
             },
           },
         };
 
         document.getElementById("mcp-json").value = JSON.stringify(mcpConfig, null, 2);
+        document.getElementById("connection-hint").textContent =
+          port !== 3055
+            ? "Custom ports must also be allowed in src/manifest.json. Copy the matching config from Setup."
+            : "Use the same channel in your MCP client. The defaults work out of the box.";
       }
+
+      [portInput, channelInput, serverPathInput].forEach((input) => {
+        input.addEventListener("input", updateMcpConfig);
+      });
+      updateConnectionStatus(false);
     </script>
   </body>
 </html>

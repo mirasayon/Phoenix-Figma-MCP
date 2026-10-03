@@ -127,7 +127,7 @@ test("MCP commands round-trip through relay and compiled plugin", { timeout: 200
     await stopProcess(relay.child);
   });
 
-  const defaultChannel = "cursor-figma";
+  const defaultChannel = "phoenix-figma";
   const peer = await openPeer(port, defaultChannel);
   peers.add(peer);
   const overrides = new Map<string, any>();

@@ -81,8 +81,8 @@ let currentChannel: string | null = null;
 
 // Create MCP server
 const server = new McpServer({
-  name: "TalkToFigmaMCP",
-  version: "1.0.0",
+  name: "Phoenix Figma MCP",
+  version: "0.1.0",
 });
 
 // Add command line argument parsing
@@ -91,20 +91,19 @@ const serverArg = args.find((arg) => arg.startsWith("--server="));
 const serverUrl = serverArg ? serverArg.split("=")[1] : "localhost";
 const WS_URL = serverUrl === "localhost" ? `ws://${serverUrl}` : `wss://${serverUrl}`;
 
-// ---------------------------------------------------------------------------
-// Phase 0: shared default channel. The MCP server and the Figma plugin agree on
-// a fixed channel so the user no longer has to call join_channel by hand. These
-// hardcoded defaults are the source of truth; an optional ~/.figma-mcp/state.json
-// can override them (server reads it; the plugin shows the channel in its UI).
-// ---------------------------------------------------------------------------
-const DEFAULT_CHANNEL = "cursor-figma";
+// Shared defaults for the MCP server and plugin. Optional server overrides live
+// in ~/.phoenix-figma-mcp/state.json; the old config path remains readable.
+const DEFAULT_CHANNEL = "phoenix-figma";
 const DEFAULT_PORT = 3055;
 
 function resolveConfig(): { channel: string; port: number } {
   const fallback = { channel: DEFAULT_CHANNEL, port: DEFAULT_PORT };
   try {
-    const statePath = joinPath(homedir(), ".figma-mcp", "state.json");
-    if (!existsSync(statePath)) return fallback;
+    const statePath = [
+      joinPath(homedir(), ".phoenix-figma-mcp", "state.json"),
+      joinPath(homedir(), ".figma-mcp", "state.json"), // Legacy settings.
+    ].find((path) => existsSync(path));
+    if (!statePath) return fallback;
     const raw = JSON.parse(readFileSync(statePath, "utf8"));
     const channel =
       typeof raw.channel === "string" && raw.channel.trim() ? raw.channel.trim() : DEFAULT_CHANNEL;
@@ -113,13 +112,18 @@ function resolveConfig(): { channel: string; port: number } {
     return { channel, port };
   } catch (error) {
     logger.warn(
-      `Could not read ~/.figma-mcp/state.json, using defaults: ${error instanceof Error ? error.message : String(error)}`,
+      `Could not read Phoenix Figma MCP settings, using defaults: ${error instanceof Error ? error.message : String(error)}`,
     );
     return fallback;
   }
 }
 
 const config = resolveConfig();
+if (process.env.WS_CHANNEL !== undefined) {
+  const channel = process.env.WS_CHANNEL.trim();
+  if (!channel) throw new Error("WS_CHANNEL must not be empty");
+  config.channel = channel;
+}
 if (process.env.WS_PORT !== undefined) {
   const port = Number(process.env.WS_PORT);
   if (!Number.isInteger(port) || port < 1 || port > 65535) {
@@ -3402,7 +3406,7 @@ function sendCommandToFigma(
 // Update the join_channel tool
 server.tool(
   "join_channel",
-  "Optional: switch the Figma communication channel. The server auto-joins the default channel ('cursor-figma') on startup, so this is only needed to use a non-default channel or to recover after a connection issue.",
+  "Optional: switch the Figma communication channel. The server auto-joins the configured channel (default: 'phoenix-figma') on startup, so this is only needed to switch channels or to recover after a connection issue.",
   {
     channel: z.string().describe("The name of the channel to join").default(""),
   },
@@ -3467,13 +3471,13 @@ async function main() {
   // Start the MCP server with stdio transport
   const transport = new StdioServerTransport();
   await server.connect(transport);
-  logger.info("FigmaMCP server running on stdio");
+  logger.info("Phoenix Figma MCP server running on stdio");
 }
 
 // Run the server
 main().catch((error) => {
   logger.error(
-    `Error starting FigmaMCP server: ${error instanceof Error ? error.message : String(error)}`,
+    `Error starting Phoenix Figma MCP server: ${error instanceof Error ? error.message : String(error)}`,
   );
   process.exit(1);
 });

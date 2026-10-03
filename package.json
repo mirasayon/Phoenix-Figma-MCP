@@ -1,22 +1,21 @@
 {
-  "name": "figma-mcp-mh",
-  "description": "Figma MCP server for Cursor: read and write the open Figma file via a local WebSocket plugin bridge (no REST API, no token, no rate limits).",
+  "name": "phoenix-figma-mcp",
+  "description": "Phoenix Figma MCP: read and edit the open Figma file from an MCP client through a local plugin bridge. No Figma API token required.",
   "version": "0.1.0",
   "type": "module",
   "scripts": {
-    "socket": "node ./src/socket.ts",
-    "presocket": "npm run build:plugin",
+    "socket": "pnpm run build:plugin && node ./src/socket.ts",
     "build:plugin": "tsc -p src/plugin/tsconfig.json",
     "start": "node ./src/server.ts",
     "dev": "node --watch ./src/server.ts",
     "typecheck:node": "tsc -p tsconfig.json --noEmit",
     "typecheck:plugin": "tsc -p src/plugin/tsconfig.json --noEmit",
-    "typecheck": "npm run typecheck:node && npm run typecheck:plugin",
+    "typecheck": "pnpm run typecheck:node && pnpm run typecheck:plugin",
     "format": "prettier . --write",
     "format:check": "prettier . --check",
-    "verify": "npm run build:plugin && npm run typecheck && node ./src/scripts/relay-smoke.ts && node ./src/scripts/mcp-smoke.ts && node --test src/scripts/*.test.ts",
+    "verify": "pnpm run build:plugin && pnpm run typecheck && node ./src/scripts/relay-smoke.ts && node ./src/scripts/mcp-smoke.ts && node --test src/scripts/*.test.ts",
     "dev:plugin": "tsc -p src/plugin/tsconfig.json --watch",
-    "test": "npm run build:plugin && node --test src/scripts/*.test.ts"
+    "test": "pnpm run build:plugin && node --test src/scripts/*.test.ts"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.32.0",
@@ -32,9 +31,10 @@
     "typescript": "^7.0.2"
   },
   "repository": {
-    "url": "git+https://github.com/mirx86/phoenix-figma-mcp.git",
+    "url": "git+https://github.com/mirasayon/phoenix-figma-mcp.git",
     "type": "git"
   },
+  "packageManager": "pnpm@12.9.1",
   "engines": {
     "node": ">=24"
   }

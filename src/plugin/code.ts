@@ -1,11 +1,12 @@
 /// <reference types="@figma/plugin-typings" />
 
-// This is the main code file for the Cursor MCP Figma plugin
+// This is the main code file for the Phoenix Figma MCP plugin
 // It handles Figma API commands
 
 // Plugin state
 const state = {
   serverPort: 3055, // Default port
+  channel: "phoenix-figma",
 };
 
 type RestColor = { r: number; g: number; b: number; a?: number };
@@ -46,6 +47,7 @@ type RgbaInput = {
 
 type PluginSettings = {
   serverPort?: number;
+  channel?: string;
 };
 
 type CommandName =
@@ -374,13 +376,13 @@ async function sendProgressUpdate(
 }
 
 // Show UI
-figma.showUI(__html__, { width: 350, height: 600 });
+figma.showUI(__html__, { width: 380, height: 600, themeColors: true });
 
 // Plugin commands from UI
 figma.ui.onmessage = async (msg: PluginUiMessage) => {
   switch (msg.type) {
     case "update-settings":
-      updateSettings(msg);
+      await updateSettings(msg);
       break;
     case "notify":
       figma.notify(msg.message);
@@ -412,18 +414,28 @@ figma.ui.onmessage = async (msg: PluginUiMessage) => {
 };
 
 // Listen for plugin commands from menu
-figma.on("run", ({ command }: { command: string }) => {
+figma.on("run", async () => {
+  await settingsReady;
   figma.ui.postMessage({ type: "auto-connect" });
 });
 
 // Update plugin settings
-function updateSettings(settings: PluginSettings) {
-  if (settings.serverPort) {
+async function updateSettings(settings: PluginSettings) {
+  if (
+    typeof settings.serverPort === "number" &&
+    Number.isInteger(settings.serverPort) &&
+    settings.serverPort > 0 &&
+    settings.serverPort <= 65535
+  ) {
     state.serverPort = settings.serverPort;
   }
+  if (typeof settings.channel === "string" && settings.channel.trim()) {
+    state.channel = settings.channel.trim();
+  }
 
-  figma.clientStorage.setAsync("settings", {
+  await figma.clientStorage.setAsync("settings", {
     serverPort: state.serverPort,
+    channel: state.channel,
   });
 }
 
@@ -1823,12 +1835,19 @@ async function setTextContent(params: SetTextContentParams) {
 }
 
 // Initialize settings on load
-(async function initializePlugin() {
+const settingsReady = (async function initializePlugin() {
   try {
     const savedSettings = await figma.clientStorage.getAsync("settings");
     if (savedSettings) {
-      if (savedSettings.serverPort) {
+      if (
+        Number.isInteger(savedSettings.serverPort) &&
+        savedSettings.serverPort > 0 &&
+        savedSettings.serverPort <= 65535
+      ) {
         state.serverPort = savedSettings.serverPort;
+      }
+      if (typeof savedSettings.channel === "string" && savedSettings.channel.trim()) {
+        state.channel = savedSettings.channel.trim();
       }
     }
 
@@ -1837,6 +1856,7 @@ async function setTextContent(params: SetTextContentParams) {
       type: "init-settings",
       settings: {
         serverPort: state.serverPort,
+        channel: state.channel,
       },
     });
   } catch (error) {
@@ -4122,7 +4142,7 @@ async function createCursorNode(targetNodeId: string) {
     if (!importedNode || !importedNode.id) {
       throw new Error("Failed to create imported cursor node");
     }
-    importedNode.name = "TTF_Connector / Mouse Cursor";
+    importedNode.name = "Phoenix Figma MCP / Mouse Cursor";
     importedNode.resize(48, 48);
 
     const cursorNode = importedNode.findOne((node: SceneNode) => node.type === "VECTOR");
@@ -4301,7 +4321,7 @@ async function createConnections(params: CreateConnectionsParams) {
       const clonedConnector = defaultConnector.clone();
 
       // Update connector name using potentially replaced node names
-      clonedConnector.name = `TTF_Connector/${startNode.id}/${endNode.id}`;
+      clonedConnector.name = `Phoenix Figma MCP / Connector / ${startNode.id} / ${endNode.id}`;
 
       // Set start and end points using potentially replaced IDs
       clonedConnector.connectorStart = {

@@ -11,10 +11,14 @@ function createUI() {
     getElementById(id: string) {
       if (!elements.has(id))
         elements.set(id, {
-          value: id === "port" ? "3055" : "cursor-figma",
+          value: id === "port" ? "3055" : id === "channel" ? "phoenix-figma" : "",
           style: {},
           classList: { add() {}, remove() {} },
           addEventListener() {},
+          attributes: {},
+          setAttribute(name: string, value: string) {
+            this.attributes[name] = value;
+          },
         });
       return elements.get(id);
     },
@@ -25,7 +29,9 @@ function createUI() {
     static OPEN = 1;
     readyState = 0;
     sent: any[] = [];
-    constructor() {
+    url: string;
+    constructor(url: string) {
+      this.url = url;
       sockets.push(this);
     }
     send(data: string) {
@@ -64,7 +70,7 @@ test("UI keeps one connecting socket and ignores stale close events", async () =
   current.onmessage({
     data: JSON.stringify({
       type: "system",
-      channel: "cursor-figma",
+      channel: "phoenix-figma",
       message: { result: "joined" },
     }),
   });
@@ -87,10 +93,7 @@ test("UI forwards concurrent progress by command ID and renders channel names as
   socket.onmessage({
     data: JSON.stringify({ type: "system", channel, message: { result: "joined" } }),
   });
-  assert.equal(
-    elements.get("connection-status").textContent,
-    `Connected to server in channel: ${channel}`,
-  );
+  assert.equal(elements.get("connection-status").textContent, `Connected to relay · ${channel}`);
   assert.equal(elements.get("connection-status").innerHTML, undefined);
   await context.handleSocketMessage({ message: { id: "a", command: "get_reactions", params: {} } });
   await context.handleSocketMessage({
@@ -111,4 +114,63 @@ test("UI forwards concurrent progress by command ID and renders channel names as
   assert.equal(socket.sent.at(-1).message.data.commandId, "a");
   await context.handleSocketMessage({ message: null });
   await context.handleSocketMessage({ message: "A user has left the channel" });
+  context.disconnectFromServer();
+  assert.equal(elements.get("progress-bar").attributes["aria-valuenow"], "0");
+});
+
+test("UI config is available before connection and matches saved settings", async () => {
+  const { context, sockets, posted, elements } = createUI();
+  const initial = JSON.parse(elements.get("mcp-json").value).mcpServers["phoenix-figma-mcp"];
+  assert.equal(initial.command, "node");
+  assert.deepEqual(initial.args, ["/absolute/path/to/phoenix-figma-mcp/src/server.ts"]);
+  assert.deepEqual(initial.env, { WS_PORT: "3055", WS_CHANNEL: "phoenix-figma" });
+
+  context.window.onmessage({
+    data: {
+      pluginMessage: {
+        type: "init-settings",
+        settings: { serverPort: 3066, channel: " project-alpha " },
+      },
+    },
+  });
+  elements.get("server-path").value = "C:\\work\\Phoenix Figma MCP\\src\\server.ts";
+  context.updateMcpConfig();
+  const config = JSON.parse(elements.get("mcp-json").value).mcpServers["phoenix-figma-mcp"];
+  assert.deepEqual(config.args, ["C:/work/Phoenix Figma MCP/src/server.ts"]);
+  assert.deepEqual(config.env, { WS_PORT: "3066", WS_CHANNEL: "project-alpha" });
+  await context.connectToServer(3066);
+  assert.equal(sockets[0].url, "ws://localhost:3066");
+  assert.equal(elements.get("btn-connect").disabled, true);
+  assert.equal(elements.get("channel").disabled, true);
+  sockets[0].readyState = 1;
+  sockets[0].onopen();
+  assert.equal(sockets[0].sent[0].channel, "project-alpha");
+  sockets[0].onmessage({
+    data: JSON.stringify({
+      type: "system",
+      channel: "project-alpha",
+      message: { result: "joined" },
+    }),
+  });
+  const saved = posted.find((message) => message.type === "update-settings");
+  assert.equal(saved.serverPort, 3066);
+  assert.equal(saved.channel, "project-alpha");
+  assert.equal(elements.get("btn-connect").disabled, false);
+  context.disconnectFromServer();
+  assert.equal(elements.get("channel").disabled, false);
+});
+
+test("UI rejects invalid ports and recovers after a failed connection", async () => {
+  const { context, sockets, elements } = createUI();
+  for (const port of [0, -1, 65536, 1.5, NaN]) await context.connectToServer(port);
+  assert.equal(sockets.length, 0);
+  assert.equal(elements.get("connection-status").className, "status error");
+  await context.connectToServer(3055);
+  sockets[0].onerror(new Error("Unavailable"));
+  assert.equal(elements.get("btn-connect").disabled, false);
+  assert.equal(elements.get("port").disabled, false);
+  assert.match(elements.get("connection-status").textContent, /pnpm run socket/);
+  await context.connectToServer(3055);
+  assert.equal(sockets.length, 2);
+  context.disconnectFromServer();
 });

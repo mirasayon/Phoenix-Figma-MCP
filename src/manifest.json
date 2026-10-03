@@ -1,5 +1,5 @@
 {
-  "name": "figma mcp",
+  "name": "Phoenix Figma MCP",
   "id": "1485687494525374295",
   "api": "1.0.0",
   "main": "code.js",
@@ -8,7 +8,7 @@
   "permissions": [],
   "networkAccess": {
     "allowedDomains": ["ws://localhost:3055"],
-    "reasoning": "Connects to a local Cursor MCP relay.",
+    "reasoning": "Connects Phoenix Figma MCP to its local WebSocket relay.",
     "devAllowedDomains": ["http://localhost:3055", "ws://localhost:3055"]
   },
   "documentAccess": "dynamic-page"

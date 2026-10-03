@@ -1,65 +1,25 @@
-# Plan: Menubar Companion App
+# Phoenix Figma MCP — plan
 
-## Problems
+## Current state
 
-1. The MCP requires the Figma plugin to be open in a separate window in Figma.
+- Node.js relay (`src/socket.ts`), stdio MCP server (`src/server.ts`) and Figma plugin
+  (`src/plugin/code.ts`, `src/ui.html`).
+- Port `3055`, channel `phoenix-figma`; the server joins automatically and reconnects.
+- Plugin connection settings are saved. The Setup tab generates an MCP config with matching
+  port and channel overrides.
+- pnpm manages dependencies, builds and checks. Run `pnpm run verify` and
+  `pnpm run format:check` before committing.
 
----
+## Remaining work
 
-Always-on tray app that runs the relay, shows connection status, and guides setup. Replaces `npm run socket` and manual `join_channel`.
+- [ ] Check the plugin in Figma Desktop and FigJam with a real MCP client: selection, edits,
+      exports, reconnects and saved settings.
+- [ ] Show whether an MCP client is in the same channel. Currently, Connected confirms only
+      the plugin's connection to the relay; peer roles/presence are not in the protocol.
+- [ ] Decide whether a tray companion is needed. If approved, prototype relay start/stop and
+      status before choosing a desktop framework or planning installers.
 
-**Stack today:** relay (`src/socket.ts`) · MCP server (`src/server.ts`, Cursor) · Figma plugin (`src/manifest.json`, `src/ui.html`)
+## Scope
 
-**Non-goals:** Can't auto-connect the Figma plugin (sandbox). Can't pick which file is open. Comments unsupported.
-
----
-
-## Architecture
-
-```
-Menubar app (Tauri)
-  → spawns node src/socket.ts
-  → tray + status popover
-  → optional observer on ws://localhost:3055
-
-Relay :3055
-  ← Figma plugin (user clicks Connect)
-  ← MCP server (Cursor)
-```
-
-**Default channel fix (Phase 0):** Both sides use `cursor-figma` on port `3055`. Server auto-joins on connect/reconnect. Plugin defaults to same value (editable). `join_channel` stays for power users. Optional later: `~/.figma-mcp/state.json`.
-
-**Status (Phase 2):** Relay up · plugin connected · MCP connected · channel match. Requires `hello`/`role` + `presence` in relay protocol.
-
-**Tech:** Tauri (light shell, native tray). Relay stays Node as child process. Electron fallback if needed.
-
----
-
-## Phases
-
-| Phase  | What                                                                                                                                         |
-| ------ | -------------------------------------------------------------------------------------------------------------------------------------------- |
-| **0a** | Hardcode `DEFAULT_CHANNEL` / `DEFAULT_PORT`. Server auto-joins in `on('open')`. Plugin defaults to same channel. Update README + smoke test. |
-| **0b** | Optional `~/.figma-mcp/state.json` override (server reads; plugin shows value in UI).                                                        |
-| **0c** | Fix stale `updateMcpConfig()` snippet in plugin UI.                                                                                          |
-| **1**  | Tauri skeleton: tray, popover, spawn/restart relay, log output.                                                                              |
-| **2**  | Live status checklist, copy buttons, tray color (green/amber/red).                                                                           |
-| **3**  | First-run wizard: Cursor `mcp.json`, plugin import, test round-trip.                                                                         |
-| **4**  | Settings, code-sign, DMG, optional auto-update.                                                                                              |
-
-**Phase 0 tradeoffs:** Relay still manual. Shared channel can cross-talk on one machine (use custom channel to isolate). No relay auth on localhost.
-
----
-
-## Milestones
-
-- **M1:** Phase 0a — auto-join works without the app
-- **M2:** Phases 1–2 — tray supervises relay + live status
-- **M3:** Phase 3 — wizard for non-technical setup
-- **M4:** Phase 4 — signed installable build
-
----
-
-## Done when
-
-Install app → wizard → Figma Connect → Cursor edits design. No terminal. Tray shows what's broken. Relay auto-restarts. No manual `join_channel` in the common case.
+The plugin panel must stay open. Reads and edits target its open file; closed files and Figma
+comments are unsupported. Custom ports also need permission in `src/manifest.json`.
