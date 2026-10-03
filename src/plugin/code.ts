@@ -101,7 +101,7 @@ type PluginUiMessage =
     };
 
 type NodeIdParams = { nodeId?: string };
-type NodeIdsParams = { nodeIds?: string[] };
+type NodeIdsParams = { nodeIds?: string[]; commandId?: string };
 type CreateRectangleParams = NodeIdParams & {
   x?: number;
   y?: number;
@@ -161,7 +161,11 @@ type CreateComponentInstanceParams = {
   y?: number;
   parentId?: string;
 };
-type ExportNodeAsImageParams = { nodeId?: string; scale?: number };
+type ExportNodeAsImageParams = {
+  nodeId?: string;
+  format?: "PNG" | "JPG" | "SVG" | "PDF";
+  scale?: number;
+};
 type SetCornerRadiusParams = { nodeId?: string; radius?: number; corners?: boolean[] };
 type SetTextContentParams = { nodeId?: string; text?: string };
 type SetCharactersOptions = {
@@ -201,7 +205,7 @@ type AnnotationInput = {
   properties?: ReadonlyArray<AnnotationProperty>;
 };
 type SetMultipleAnnotationsParams = { nodeId?: string; annotations?: AnnotationInput[] };
-type ScanNodesByTypesParams = { nodeId?: string; types?: string[] };
+type ScanNodesByTypesParams = { nodeId?: string; types?: string[]; commandId?: string };
 type LayoutModeParams = {
   nodeId?: string;
   layoutMode?: FrameNode["layoutMode"];
@@ -227,7 +231,7 @@ type LayoutSizingParams = {
 type ItemSpacingParams = { nodeId?: string; itemSpacing?: number; counterAxisSpacing?: number };
 type SetDefaultConnectorParams = { connectorId?: string };
 type ConnectionSpec = { startNodeId: string; endNodeId: string; text?: string };
-type CreateConnectionsParams = { connections?: ConnectionSpec[] };
+type CreateConnectionsParams = { connections?: ConnectionSpec[]; commandId?: string };
 type SetFocusParams = { nodeId?: string };
 type SetSelectionsParams = { nodeIds?: string[] };
 
@@ -387,7 +391,10 @@ figma.ui.onmessage = async (msg: PluginUiMessage) => {
     case "execute-command":
       // Execute commands received from UI (which gets them from WebSocket)
       try {
-        const result = await handleCommand(msg.command, msg.params);
+        const result = await handleCommand(msg.command, {
+          ...asParams<Record<string, unknown>>(msg.params),
+          commandId: msg.id,
+        });
         figma.ui.postMessage({
           type: "command-result",
           id: msg.id,
@@ -538,11 +545,11 @@ async function handleCommand(command: CommandName, params: unknown) {
     case "set_item_spacing":
       return await setItemSpacing(asParams<ItemSpacingParams>(params));
     case "get_reactions": {
-      const { nodeIds } = asParams<NodeIdsParams>(params);
+      const { nodeIds, commandId } = asParams<NodeIdsParams>(params);
       if (!nodeIds || !Array.isArray(nodeIds)) {
         throw new Error("Missing or invalid nodeIds parameter");
       }
-      return await getReactions(nodeIds);
+      return await getReactions(nodeIds, commandId);
     }
     case "set_default_connector":
       return await setDefaultConnector(asParams<SetDefaultConnectorParams>(params));
@@ -649,10 +656,6 @@ function serializeRestPaint(paint: RestPaint): Record<string, unknown> {
 }
 
 function filterFigmaNode(node: RestNode): Record<string, unknown> | null {
-  if (node.type === "VECTOR") {
-    return null;
-  }
-
   const filtered: Record<string, unknown> = {
     id: node.id,
     name: node.name,
@@ -745,9 +748,8 @@ async function getNodesInfo(nodeIds: string[]) {
   }
 }
 
-async function getReactions(nodeIds: string[]) {
+async function getReactions(nodeIds: string[], commandId = generateCommandId()) {
   try {
-    const commandId = generateCommandId();
     sendProgressUpdate(
       commandId,
       "get_reactions",
@@ -877,7 +879,7 @@ async function getReactions(nodeIds: string[]) {
             commandId,
             "get_reactions",
             "in_progress",
-            processedCount / totalCount,
+            Math.round((processedCount / totalCount) * 100),
             totalCount,
             processedCount,
             `Node not found: ${nodeId}`,
@@ -898,7 +900,7 @@ async function getReactions(nodeIds: string[]) {
           commandId,
           "get_reactions",
           "in_progress",
-          processedCount / totalCount,
+          Math.round((processedCount / totalCount) * 100),
           totalCount,
           processedCount,
           `Processed node ${processedCount}/${totalCount}, found ${nodeResults.length} nodes with reactions`,
@@ -909,7 +911,7 @@ async function getReactions(nodeIds: string[]) {
           commandId,
           "get_reactions",
           "in_progress",
-          processedCount / totalCount,
+          Math.round((processedCount / totalCount) * 100),
           totalCount,
           processedCount,
           `Error processing node: ${errorMessage(error)}`,
@@ -922,7 +924,7 @@ async function getReactions(nodeIds: string[]) {
       commandId,
       "get_reactions",
       "completed",
-      1,
+      100,
       totalCount,
       totalCount,
       `Completed deep search: found ${allResults.length} nodes with reactions.`,
@@ -1634,9 +1636,10 @@ async function createComponentInstance(params: CreateComponentInstanceParams) {
 }
 
 async function exportNodeAsImage(params: ExportNodeAsImageParams) {
-  const { nodeId, scale = 1 } = params || {};
-
-  const format = "PNG" as const;
+  const { nodeId, format = "PNG", scale = 1 } = params || {};
+  if (!["PNG", "JPG", "SVG", "PDF"].includes(format)) {
+    throw new Error(`Unsupported export format: ${format}`);
+  }
 
   if (!nodeId) {
     throw new Error("Missing nodeId parameter");
@@ -1652,14 +1655,19 @@ async function exportNodeAsImage(params: ExportNodeAsImageParams) {
   }
 
   try {
-    const settings: ExportSettingsImage = {
-      format,
-      constraint: { type: "SCALE", value: scale },
-    };
+    const settings: ExportSettingsImage | ExportSettingsSVG | ExportSettingsPDF =
+      format === "PNG" || format === "JPG"
+        ? { format, constraint: { type: "SCALE", value: scale } }
+        : { format };
 
     const bytes = await node.exportAsync(settings);
 
-    const mimeType = "image/png";
+    const mimeType = {
+      PNG: "image/png",
+      JPG: "image/jpeg",
+      SVG: "image/svg+xml",
+      PDF: "application/pdf",
+    }[format];
 
     // Proper way to convert Uint8Array to base64
     const base64 = customBase64Encode(bytes);
@@ -3013,7 +3021,7 @@ async function scanNodesByTypes(params: ScanNodesByTypesParams) {
   const matchingNodes: MatchingNode[] = [];
 
   // Send a single progress update to notify start
-  const commandId = generateCommandId();
+  const commandId = params.commandId || generateCommandId();
   sendProgressUpdate(
     commandId,
     "scan_nodes_by_types",
@@ -3178,7 +3186,7 @@ async function setMultipleAnnotations(params: SetMultipleAnnotationsParams) {
 
 async function deleteMultipleNodes(params: NodeIdsParams) {
   const { nodeIds } = params || {};
-  const commandId = generateCommandId();
+  const commandId = params?.commandId || generateCommandId();
 
   if (!nodeIds || !Array.isArray(nodeIds) || nodeIds.length === 0) {
     const errorMsg = "Missing or invalid nodeIds parameter";
@@ -4222,7 +4230,7 @@ async function createConnections(params: CreateConnectionsParams) {
   const { connections } = params;
 
   // Command ID for progress tracking
-  const commandId = generateCommandId();
+  const commandId = params.commandId || generateCommandId();
   sendProgressUpdate(
     commandId,
     "create_connections",
@@ -4373,7 +4381,7 @@ async function createConnections(params: CreateConnectionsParams) {
         commandId,
         "create_connections",
         "in_progress",
-        processedCount / totalCount,
+        Math.round((processedCount / totalCount) * 100),
         totalCount,
         processedCount,
         `Created connection ${processedCount}/${totalCount}`,
@@ -4386,7 +4394,7 @@ async function createConnections(params: CreateConnectionsParams) {
         commandId,
         "create_connections",
         "in_progress",
-        processedCount / totalCount,
+        Math.round((processedCount / totalCount) * 100),
         totalCount,
         processedCount,
         `Error creating connection: ${errorMessage(error)}`,
@@ -4404,7 +4412,7 @@ async function createConnections(params: CreateConnectionsParams) {
     commandId,
     "create_connections",
     "completed",
-    1,
+    100,
     totalCount,
     totalCount,
     `Completed creating ${results.length} connections`,

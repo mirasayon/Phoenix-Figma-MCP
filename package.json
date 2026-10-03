@@ -13,12 +13,13 @@
     "typecheck:plugin": "tsc -p src/plugin/tsconfig.json --noEmit",
     "typecheck": "npm run typecheck:node && npm run typecheck:plugin",
     "format": "prettier . --write",
-    "mix": "rimraf ./repomix-output.xml && repomix",
+    "mix": "repomix",
     "format:check": "prettier . --check",
-    "verify": "npm run build:plugin && npm run typecheck && node ./src/scripts/relay-smoke.ts && node ./src/scripts/mcp-smoke.ts",
+    "verify": "npm run build:plugin && npm run typecheck && node ./src/scripts/relay-smoke.ts && node ./src/scripts/mcp-smoke.ts && node --test src/scripts/*.test.ts",
     "update": "npx npm-check-updates -u && npm install && npm run format",
     "update:check": "npx npm-check-updates",
-    "dev:plugin": "tsc -p src/plugin/tsconfig.json --watch"
+    "dev:plugin": "tsc -p src/plugin/tsconfig.json --watch",
+    "test": "npm run build:plugin && node --test src/scripts/*.test.ts"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.30.0",

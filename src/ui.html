@@ -412,10 +412,10 @@
 
         // Add instructions for localhost when disconnected
         if (!isConnected) {
-          statusMessage += `<br><br>Run this in your terminal (from the figma-mcp folder), then connect<br><code>npm run socket</code>`;
+          statusMessage += " Run npm run socket in the project folder, then connect again.";
         }
 
-        connectionStatus.innerHTML = statusMessage;
+        connectionStatus.textContent = statusMessage;
         connectionStatus.className = `status ${isConnected ? "connected" : "disconnected"}`;
 
         // Update connect button text and style based on connection state
@@ -437,17 +437,22 @@
       // Connect to WebSocket server
       async function connectToServer(port) {
         try {
-          if (state.connected && state.socket) {
-            updateConnectionStatus(true, "Already connected to server");
+          if (
+            state.socket &&
+            (state.socket.readyState === WebSocket.OPEN ||
+              state.socket.readyState === WebSocket.CONNECTING)
+          ) {
             return;
           }
 
           state.serverPort = port;
           const wsUrl = `ws://localhost:${port}`;
 
-          state.socket = new WebSocket(wsUrl);
+          const socket = new WebSocket(wsUrl);
+          state.socket = socket;
 
-          state.socket.onopen = () => {
+          socket.onopen = () => {
+            if (state.socket !== socket) return;
             // Phase 0: default to the shared channel the MCP server auto-joins.
             // Still editable for isolated/parallel sessions; generateChannelName()
             // remains available below if a random channel is ever wanted.
@@ -456,7 +461,7 @@
             state.channel = channelName;
 
             // Join the channel using the same format as App.tsx
-            state.socket.send(
+            socket.send(
               JSON.stringify({
                 type: "join",
                 channel: channelName.trim(),
@@ -464,7 +469,8 @@
             );
           };
 
-          state.socket.onmessage = (event) => {
+          socket.onmessage = (event) => {
+            if (state.socket !== socket) return;
             try {
               const data = JSON.parse(event.data);
               console.log("Received message:", data);
@@ -474,10 +480,7 @@
                 if (data.message && data.message.result) {
                   state.connected = true;
                   const channelName = data.channel;
-                  updateConnectionStatus(
-                    true,
-                    `Connected to server in channel: <strong>${channelName}</strong>`,
-                  );
+                  updateConnectionStatus(true, `Connected to server in channel: ${channelName}`);
 
                   // Notify the plugin code
                   parent.postMessage(
@@ -492,27 +495,29 @@
                 }
               } else if (data.type === "error") {
                 console.error("Error:", data.message);
+                disconnectFromServer();
                 updateConnectionStatus(false, `Error: ${data.message}`);
-                state.socket.close();
               }
 
-              handleSocketMessage(data);
+              handleSocketMessage(data).catch((error) => console.error("Invalid message:", error));
             } catch (error) {
               console.error("Error parsing message:", error);
             }
           };
 
-          state.socket.onclose = () => {
+          socket.onclose = () => {
+            if (state.socket !== socket) return;
             state.connected = false;
             state.socket = null;
+            rejectPendingRequests();
             updateConnectionStatus(false, "Disconnected from server");
           };
 
-          state.socket.onerror = (error) => {
+          socket.onerror = (error) => {
+            if (state.socket !== socket) return;
             console.error("WebSocket error:", error);
+            disconnectFromServer();
             updateConnectionStatus(false, "Connection error");
-            state.connected = false;
-            state.socket = null;
           };
         } catch (error) {
           console.error("Connection error:", error);
@@ -521,11 +526,21 @@
       }
 
       // Disconnect from websocket server
+      function rejectPendingRequests() {
+        for (const request of state.pendingRequests.values()) {
+          clearTimeout(request.timeout);
+          request.reject(new Error("Connection closed"));
+        }
+        state.pendingRequests.clear();
+      }
+
       function disconnectFromServer() {
         if (state.socket) {
-          state.socket.close();
+          const socket = state.socket;
           state.socket = null;
           state.connected = false;
+          socket.close();
+          rejectPendingRequests();
           updateConnectionStatus(false, "Disconnected from server");
         }
       }
@@ -533,11 +548,13 @@
       // Handle messages from the WebSocket
       async function handleSocketMessage(payload) {
         const data = payload.message;
+        if (!data || typeof data !== "object") return;
         console.log("handleSocketMessage", data);
 
         // If it's a response to a previous request
         if (data.id && state.pendingRequests.has(data.id)) {
-          const { resolve, reject } = state.pendingRequests.get(data.id);
+          const { resolve, reject, timeout } = state.pendingRequests.get(data.id);
+          clearTimeout(timeout);
           state.pendingRequests.delete(data.id);
 
           if (data.error) {
@@ -551,8 +568,6 @@
         // If it's a new command
         if (data.command) {
           try {
-            state.activeRequestId = data.id;
-
             // Send the command to the plugin code
             parent.postMessage(
               {
@@ -560,7 +575,7 @@
                   type: "execute-command",
                   id: data.id,
                   command: data.command,
-                  params: data.params,
+                  params: { ...data.params, commandId: data.id },
                 },
               },
               "*",
@@ -575,40 +590,44 @@
       // Send a command to the WebSocket server
       async function sendCommand(command, params) {
         return new Promise((resolve, reject) => {
-          if (!state.connected || !state.socket) {
+          if (!state.connected || !state.socket || state.socket.readyState !== WebSocket.OPEN) {
             reject(new Error("Not connected to server"));
             return;
           }
 
           const id = generateId();
-          state.pendingRequests.set(id, { resolve, reject });
-
-          state.socket.send(
-            JSON.stringify({
-              id,
-              type: "message",
-              channel: state.channel,
-              message: {
-                id,
-                command,
-                params,
-              },
-            }),
-          );
-
-          // Set timeout to reject the promise after 30 seconds
-          setTimeout(() => {
+          const timeout = setTimeout(() => {
             if (state.pendingRequests.has(id)) {
               state.pendingRequests.delete(id);
               reject(new Error("Request timed out"));
             }
           }, 30000);
+          state.pendingRequests.set(id, { resolve, reject, timeout });
+
+          try {
+            state.socket.send(
+              JSON.stringify({
+                id,
+                type: "message",
+                channel: state.channel,
+                message: {
+                  id,
+                  command,
+                  params,
+                },
+              }),
+            );
+          } catch (error) {
+            clearTimeout(timeout);
+            state.pendingRequests.delete(id);
+            reject(error);
+          }
         });
       }
 
       // Send success response back to WebSocket
       function sendSuccessResponse(id, result) {
-        if (!state.connected || !state.socket) {
+        if (!state.connected || !state.socket || state.socket.readyState !== WebSocket.OPEN) {
           console.error("Cannot send response: socket not connected");
           return;
         }
@@ -628,7 +647,7 @@
 
       // Send error response back to WebSocket
       function sendErrorResponse(id, errorMessage) {
-        if (!state.connected || !state.socket) {
+        if (!state.connected || !state.socket || state.socket.readyState !== WebSocket.OPEN) {
           console.error("Cannot send error response: socket not connected");
           return;
         }
@@ -724,14 +743,15 @@
 
       // Send operation progress update to server
       function sendProgressUpdateToServer(progressData) {
-        if (!state.connected || !state.socket) {
+        if (!state.connected || !state.socket || state.socket.readyState !== WebSocket.OPEN) {
           console.error("Cannot send progress update: socket not connected");
           return;
         }
 
         console.log("Sending progress update to server:", progressData);
 
-        const requestId = state.activeRequestId || progressData.commandId;
+        const requestId = progressData.commandId;
+        if (!requestId) return;
         state.socket.send(
           JSON.stringify({
             id: requestId,
@@ -768,10 +788,10 @@
             updateConnectionStatus(message.connected, message.message);
             break;
           case "auto-connect":
-            connectButton.click();
+            connectToServer(parseInt(portInput.value, 10) || 3055);
             break;
           case "auto-disconnect":
-            connectButton.click();
+            disconnectFromServer();
             break;
           case "command-result":
             // Forward the result from plugin code back to WebSocket

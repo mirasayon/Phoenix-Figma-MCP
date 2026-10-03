@@ -108,7 +108,8 @@ function resolveConfig(): { channel: string; port: number } {
     const raw = JSON.parse(readFileSync(statePath, "utf8"));
     const channel =
       typeof raw.channel === "string" && raw.channel.trim() ? raw.channel.trim() : DEFAULT_CHANNEL;
-    const port = Number.isInteger(raw.port) ? raw.port : DEFAULT_PORT;
+    const port =
+      Number.isInteger(raw.port) && raw.port > 0 && raw.port <= 65535 ? raw.port : DEFAULT_PORT;
     return { channel, port };
   } catch (error) {
     logger.warn(
@@ -119,6 +120,15 @@ function resolveConfig(): { channel: string; port: number } {
 }
 
 const config = resolveConfig();
+if (process.env.WS_PORT !== undefined) {
+  const port = Number(process.env.WS_PORT);
+  if (!Number.isInteger(port) || port < 1 || port > 65535) {
+    throw new Error("WS_PORT must be an integer between 1 and 65535");
+  }
+  config.port = port;
+}
+let desiredChannel = config.channel;
+let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
 
 // ---------------------------------------------------------------------------
 // Reads run through the plugin bridge (the file open in Figma Desktop): no
@@ -202,6 +212,7 @@ server.tool(
       };
     } catch (error) {
       return {
+        isError: true,
         content: [
           {
             type: "text",
@@ -233,6 +244,7 @@ server.tool(
       };
     } catch (error) {
       return {
+        isError: true,
         content: [
           {
             type: "text",
@@ -264,6 +276,7 @@ server.tool(
       };
     } catch (error) {
       return {
+        isError: true,
         content: [
           {
             type: "text",
@@ -297,6 +310,7 @@ server.tool(
       };
     } catch (error) {
       return {
+        isError: true,
         content: [
           {
             type: "text",
@@ -310,23 +324,22 @@ server.tool(
   },
 );
 
-function rgbaToHex(color: any): string {
+function rgbaToHex(color: string | { r: number; g: number; b: number; a?: number }): string {
   // skip if color is already hex
-  if (color.startsWith("#")) {
+  if (typeof color === "string") {
     return color;
   }
 
   const r = Math.round(color.r * 255);
   const g = Math.round(color.g * 255);
   const b = Math.round(color.b * 255);
-  const a = Math.round(color.a * 255);
+  const a = Math.round((color.a ?? 1) * 255);
 
   return `#${r.toString(16).padStart(2, "0")}${g.toString(16).padStart(2, "0")}${b.toString(16).padStart(2, "0")}${a === 255 ? "" : a.toString(16).padStart(2, "0")}`;
 }
 
 function filterFigmaNode(node: any) {
-  // Skip VECTOR type nodes
-  if (node.type === "VECTOR") {
+  if (!node || typeof node !== "object") {
     return null;
   }
 
@@ -407,7 +420,7 @@ function filterFigmaNode(node: any) {
   if (node.children) {
     filtered.children = node.children
       .map((child: any) => filterFigmaNode(child))
-      .filter((child: any) => child !== null); // Remove null children (VECTOR nodes)
+      .filter((child: any) => child !== null);
   }
 
   return filtered;
@@ -438,6 +451,7 @@ server.tool(
       };
     } catch (error) {
       return {
+        isError: true,
         content: [
           {
             type: "text",
@@ -483,6 +497,7 @@ server.tool(
       };
     } catch (error) {
       return {
+        isError: true,
         content: [
           {
             type: "text",
@@ -619,6 +634,7 @@ server.tool(
       };
     } catch (error) {
       return {
+        isError: true,
         content: [
           {
             type: "text",
@@ -741,6 +757,7 @@ server.tool(
       };
     } catch (error) {
       return {
+        isError: true,
         content: [
           {
             type: "text",
@@ -782,6 +799,7 @@ server.tool(
       };
     } catch (error) {
       return {
+        isError: true,
         content: [
           {
             type: "text",
@@ -827,6 +845,7 @@ server.tool(
       };
     } catch (error) {
       return {
+        isError: true,
         content: [
           {
             type: "text",
@@ -863,6 +882,7 @@ server.tool(
       };
     } catch (error) {
       return {
+        isError: true,
         content: [
           {
             type: "text",
@@ -928,6 +948,7 @@ server.tool(
       };
     } catch (error) {
       return {
+        isError: true,
         content: [
           {
             type: "text",
@@ -966,6 +987,7 @@ server.tool(
       };
     } catch (error) {
       return {
+        isError: true,
         content: [
           {
             type: "text",
@@ -997,6 +1019,7 @@ server.tool(
       };
     } catch (error) {
       return {
+        isError: true,
         content: [
           {
             type: "text",
@@ -1030,6 +1053,7 @@ server.tool(
       };
     } catch (error) {
       return {
+        isError: true,
         content: [
           {
             type: "text",
@@ -1050,7 +1074,7 @@ server.tool(
   {
     nodeId: z.string().describe("The ID of the node to export"),
     format: z.enum(["PNG", "JPG", "SVG", "PDF"]).optional().describe("Export format"),
-    scale: z.number().positive().optional().describe("Export scale"),
+    scale: z.number().positive().optional().describe("Export scale for PNG and JPG"),
   },
   async ({ nodeId, format, scale }: any) => {
     try {
@@ -1060,6 +1084,21 @@ server.tool(
         scale: scale || 1,
       });
       const typedResult = result as { imageData: string; mimeType: string };
+
+      if (typedResult.mimeType === "image/svg+xml" || typedResult.mimeType === "application/pdf") {
+        return {
+          content: [
+            {
+              type: "resource",
+              resource: {
+                uri: `figma://node/${encodeURIComponent(nodeId)}/export.${(format || "PNG").toLowerCase()}`,
+                mimeType: typedResult.mimeType,
+                blob: typedResult.imageData,
+              },
+            },
+          ],
+        };
+      }
 
       return {
         content: [
@@ -1072,6 +1111,7 @@ server.tool(
       };
     } catch (error) {
       return {
+        isError: true,
         content: [
           {
             type: "text",
@@ -1110,6 +1150,7 @@ server.tool(
       };
     } catch (error) {
       return {
+        isError: true,
         content: [
           {
             type: "text",
@@ -1137,6 +1178,7 @@ server.tool("get_styles", "Get all styles from the current Figma document", {}, 
     };
   } catch (error) {
     return {
+      isError: true,
       content: [
         {
           type: "text",
@@ -1165,6 +1207,7 @@ server.tool(
       };
     } catch (error) {
       return {
+        isError: true,
         content: [
           {
             type: "text",
@@ -1206,6 +1249,7 @@ server.tool(
       };
     } catch (error) {
       return {
+        isError: true,
         content: [
           {
             type: "text",
@@ -1248,6 +1292,7 @@ server.tool(
         properties,
       });
       return {
+        isError: (result as { success?: boolean })?.success === false,
         content: [
           {
             type: "text",
@@ -1257,6 +1302,7 @@ server.tool(
       };
     } catch (error) {
       return {
+        isError: true,
         content: [
           {
             type: "text",
@@ -1376,6 +1422,7 @@ server.tool(
       }
 
       return {
+        isError: typedResult.success === false || failedResults.length > 0,
         content: [
           initialStatus,
           {
@@ -1386,6 +1433,7 @@ server.tool(
       };
     } catch (error) {
       return {
+        isError: true,
         content: [
           {
             type: "text",
@@ -1440,6 +1488,7 @@ server.tool(
       };
     } catch (error) {
       return {
+        isError: true,
         content: [
           {
             type: "text",
@@ -1473,6 +1522,7 @@ server.tool(
       const typedResult = result as getInstanceOverridesResult;
 
       return {
+        isError: typedResult.success === false,
         content: [
           {
             type: "text",
@@ -1484,6 +1534,7 @@ server.tool(
       };
     } catch (error) {
       return {
+        isError: true,
         content: [
           {
             type: "text",
@@ -1525,6 +1576,7 @@ server.tool(
         };
       } else {
         return {
+          isError: true,
           content: [
             {
               type: "text",
@@ -1535,6 +1587,7 @@ server.tool(
       }
     } catch (error) {
       return {
+        isError: true,
         content: [
           {
             type: "text",
@@ -1579,6 +1632,7 @@ server.tool(
       };
     } catch (error) {
       return {
+        isError: true,
         content: [
           {
             type: "text",
@@ -1761,6 +1815,7 @@ server.tool(
       };
     } catch (error) {
       return {
+        isError: true,
         content: [
           {
             type: "text",
@@ -1846,6 +1901,7 @@ server.tool(
       };
     } catch (error) {
       return {
+        isError: true,
         content: [
           {
             type: "text",
@@ -2078,6 +2134,7 @@ server.tool(
       }
 
       return {
+        isError: typedResult.success === false || failedResults.length > 0,
         content: [
           initialStatus,
           {
@@ -2088,6 +2145,7 @@ server.tool(
       };
     } catch (error) {
       return {
+        isError: true,
         content: [
           {
             type: "text",
@@ -2344,6 +2402,7 @@ server.tool(
       };
     } catch (error) {
       return {
+        isError: true,
         content: [
           {
             type: "text",
@@ -2397,6 +2456,7 @@ server.tool(
       };
     } catch (error) {
       return {
+        isError: true,
         content: [
           {
             type: "text",
@@ -2458,6 +2518,7 @@ server.tool(
       };
     } catch (error) {
       return {
+        isError: true,
         content: [
           {
             type: "text",
@@ -2519,6 +2580,7 @@ server.tool(
       };
     } catch (error) {
       return {
+        isError: true,
         content: [
           {
             type: "text",
@@ -2576,6 +2638,7 @@ server.tool(
       };
     } catch (error) {
       return {
+        isError: true,
         content: [
           {
             type: "text",
@@ -2615,6 +2678,7 @@ server.tool(
       };
     } catch (error) {
       return {
+        isError: true,
         content: [
           {
             type: "text",
@@ -2651,6 +2715,7 @@ server.tool(
       };
     } catch (error) {
       return {
+        isError: true,
         content: [
           {
             type: "text",
@@ -2704,6 +2769,7 @@ server.tool(
       };
     } catch (error) {
       return {
+        isError: true,
         content: [
           {
             type: "text",
@@ -2736,6 +2802,7 @@ server.tool(
       };
     } catch (error) {
       return {
+        isError: true,
         content: [
           {
             type: "text",
@@ -2771,6 +2838,7 @@ server.tool(
       };
     } catch (error) {
       return {
+        isError: true,
         content: [
           {
             type: "text",
@@ -3086,29 +3154,36 @@ function processFigmaNodeResponse(result: unknown): any {
 // Update the connectToFigma function
 function connectToFigma(port: number = config.port) {
   // If already connected, do nothing
-  if (ws && ws.readyState === WebSocket.OPEN) {
-    logger.info("Already connected to Figma");
+  if (ws && (ws.readyState === WebSocket.OPEN || ws.readyState === WebSocket.CONNECTING)) {
     return;
+  }
+
+  if (reconnectTimer) {
+    clearTimeout(reconnectTimer);
+    reconnectTimer = null;
   }
 
   const wsUrl = serverUrl === "localhost" ? `${WS_URL}:${port}` : WS_URL;
   logger.info(`Connecting to Figma socket server at ${wsUrl}...`);
-  ws = new WebSocket(wsUrl);
+  const socket = new WebSocket(wsUrl);
+  ws = socket;
 
-  ws.on("open", () => {
+  socket.on("open", () => {
+    if (ws !== socket) return;
     logger.info("Connected to Figma socket server");
     // Reset channel on new connection
     currentChannel = null;
     // Phase 0: auto-join the shared default channel so no manual join_channel is
     // needed. This runs on every (re)connect, so it survives relay restarts.
-    joinChannel(config.channel).catch((error) => {
+    joinChannel(desiredChannel).catch((error) => {
       logger.warn(
-        `Auto-join of channel "${config.channel}" failed; call join_channel manually if needed: ${error instanceof Error ? error.message : String(error)}`,
+        `Auto-join of channel "${desiredChannel}" failed; call join_channel manually if needed: ${error instanceof Error ? error.message : String(error)}`,
       );
     });
   });
 
-  ws.on("message", (data: any) => {
+  socket.on("message", (data: any) => {
+    if (ws !== socket) return;
     try {
       // Define a more specific type with an index signature to allow any property access
       interface ProgressMessage {
@@ -3118,11 +3193,21 @@ function connectToFigma(port: number = config.port) {
         [key: string]: any; // Allow any other properties
       }
 
-      const json = JSON.parse(data) as ProgressMessage;
+      const json = JSON.parse(data.toString()) as ProgressMessage;
+      if (!json || typeof json !== "object") return;
+
+      if (json.type === "error" && json.id && pendingRequests.has(json.id)) {
+        const request = pendingRequests.get(json.id)!;
+        clearTimeout(request.timeout);
+        pendingRequests.delete(json.id);
+        request.reject(new Error(String(json.message)));
+        return;
+      }
 
       // Handle progress updates
       if (json.type === "progress_update") {
-        const progressData = json.message.data as CommandProgressUpdate;
+        const progressData = json.message?.data as CommandProgressUpdate;
+        if (!progressData || typeof progressData !== "object") return;
         const requestId = json.id || "";
 
         if (requestId && pendingRequests.has(requestId)) {
@@ -3165,11 +3250,17 @@ function connectToFigma(port: number = config.port) {
 
       // Handle regular responses
       const myResponse = json.message;
+      if (!myResponse || typeof myResponse !== "object") return;
       logger.debug(`Received message: ${JSON.stringify(myResponse)}`);
       logger.log("myResponse" + JSON.stringify(myResponse));
 
       // Handle response to a request
-      if (myResponse.id && pendingRequests.has(myResponse.id) && myResponse.result) {
+      if (
+        myResponse.id &&
+        pendingRequests.has(myResponse.id) &&
+        (Object.prototype.hasOwnProperty.call(myResponse, "result") ||
+          myResponse.error !== undefined)
+      ) {
         const request = pendingRequests.get(myResponse.id)!;
         clearTimeout(request.timeout);
 
@@ -3177,9 +3268,7 @@ function connectToFigma(port: number = config.port) {
           logger.error(`Error from Figma: ${myResponse.error}`);
           request.reject(new Error(myResponse.error));
         } else {
-          if (myResponse.result) {
-            request.resolve(myResponse.result);
-          }
+          request.resolve(myResponse.result);
         }
 
         pendingRequests.delete(myResponse.id);
@@ -3194,13 +3283,15 @@ function connectToFigma(port: number = config.port) {
     }
   });
 
-  ws.on("error", (error) => {
+  socket.on("error", (error) => {
     logger.error(`Socket error: ${error}`);
   });
 
-  ws.on("close", () => {
+  socket.on("close", () => {
+    if (ws !== socket) return;
     logger.info("Disconnected from Figma socket server");
     ws = null;
+    currentChannel = null;
 
     // Reject all pending requests
     for (const [id, request] of pendingRequests.entries()) {
@@ -3211,12 +3302,14 @@ function connectToFigma(port: number = config.port) {
 
     // Attempt to reconnect
     logger.info("Attempting to reconnect in 2 seconds...");
-    setTimeout(() => connectToFigma(port), 2000);
+    reconnectTimer = setTimeout(() => connectToFigma(port), 2000);
   });
 }
 
 // Function to join a channel
 async function joinChannel(channelName: string): Promise<void> {
+  channelName = channelName.trim();
+  if (!channelName) throw new Error("Channel name is required");
   if (!ws || ws.readyState !== WebSocket.OPEN) {
     throw new Error("Not connected to Figma");
   }
@@ -3224,6 +3317,7 @@ async function joinChannel(channelName: string): Promise<void> {
   try {
     await sendCommandToFigma("join", { channel: channelName });
     currentChannel = channelName;
+    desiredChannel = channelName;
     logger.info(`Joined channel: ${channelName}`);
   } catch (error) {
     logger.error(
@@ -3289,7 +3383,19 @@ function sendCommandToFigma(
     // Send the request
     logger.info(`Sending command to Figma: ${command}`);
     logger.debug(`Request details: ${JSON.stringify(request)}`);
-    ws.send(JSON.stringify(request));
+    const onSendError = (error?: Error) => {
+      if (!error) return;
+      const pending = pendingRequests.get(id);
+      if (!pending) return;
+      clearTimeout(pending.timeout);
+      pendingRequests.delete(id);
+      pending.reject(error);
+    };
+    try {
+      ws.send(JSON.stringify(request), onSendError);
+    } catch (error) {
+      onSendError(error instanceof Error ? error : new Error(String(error)));
+    }
   });
 }
 
@@ -3329,6 +3435,7 @@ server.tool(
       };
     } catch (error) {
       return {
+        isError: true,
         content: [
           {
             type: "text",

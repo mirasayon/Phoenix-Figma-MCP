@@ -8,20 +8,11 @@
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
     "noEmit": true,
+    "allowImportingTsExtensions": true,
     "rootDir": "./",
-    "lib": [
-      "ESNext"
-    ],
-    "types": [
-      "node"
-    ]
+    "lib": ["ESNext"],
+    "types": ["node"]
   },
-  "include": [
-    "./src"
-  ],
-  "exclude": [
-    "node_modules",
-    "dist",
-    "src/plugin"
-  ]
+  "include": ["./src"],
+  "exclude": ["node_modules", "dist", "src/plugin"]
 }
