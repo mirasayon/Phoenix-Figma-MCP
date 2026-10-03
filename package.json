@@ -13,28 +13,22 @@
     "typecheck:plugin": "tsc -p src/plugin/tsconfig.json --noEmit",
     "typecheck": "npm run typecheck:node && npm run typecheck:plugin",
     "format": "prettier . --write",
-    "mix": "repomix",
     "format:check": "prettier . --check",
     "verify": "npm run build:plugin && npm run typecheck && node ./src/scripts/relay-smoke.ts && node ./src/scripts/mcp-smoke.ts && node --test src/scripts/*.test.ts",
-    "update": "npx npm-check-updates -u && npm install && npm run format",
-    "update:check": "npx npm-check-updates",
     "dev:plugin": "tsc -p src/plugin/tsconfig.json --watch",
     "test": "npm run build:plugin && node --test src/scripts/*.test.ts"
   },
   "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.30.0",
+    "@modelcontextprotocol/sdk": "^1.32.0",
     "uuid": "^14.0.2",
-    "ws": "^8.21.3",
-    "zod": "^4.6.2"
+    "ws": "^8.22.0",
+    "zod": "^4.6.5"
   },
   "devDependencies": {
-    "@figma/plugin-typings": "^1.138.0",
-    "@types/node": "^26.4.1",
-    "@types/uuid": "^11.0.0",
-    "@types/ws": "^8.18.1",
-    "npm-check-updates": "^23.1.0",
-    "prettier": "^3.9.6",
-    "repomix": "^1.18.0",
+    "@figma/plugin-typings": "^1.140.0",
+    "@types/node": "^26.6.4",
+    "@types/ws": "^8.18.2",
+    "prettier": "^3.9.9",
     "typescript": "^7.0.2"
   },
   "repository": {
