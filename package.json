@@ -3,6 +3,7 @@
   "description": "Phoenix Figma MCP: read and edit the open Figma file from an MCP client through a local plugin bridge. No Figma API token required.",
   "version": "0.1.0",
   "type": "module",
+  "license": "MIT",
   "scripts": {
     "socket": "pnpm run build:plugin && node ./src/socket.ts",
     "build:plugin": "tsc -p src/plugin/tsconfig.json",

@@ -165,6 +165,7 @@
         font-weight: 500;
       }
       input,
+      select,
       textarea {
         display: block;
         width: 100%;
@@ -381,9 +382,13 @@ pnpm run socket</code></pre>
         </div>
         <div id="mcp-config" class="section">
           <h2 class="step-title"><span class="step-number">2</span> Add your MCP server</h2>
-          <p class="hint">
-            Paste this into your client's MCP config. In Cursor, use
-            <code>~/.cursor/mcp.json</code>.
+          <label for="mcp-client">MCP client</label>
+          <select id="mcp-client">
+            <option value="cursor">Cursor</option>
+            <option value="codex">Codex (CLI / IDE)</option>
+          </select>
+          <p id="mcp-config-hint" class="hint" style="margin-top: 10px">
+            Paste this into ~/.cursor/mcp.json, then reload MCP servers.
           </p>
           <label for="server-path">Absolute path to <code>src/server.ts</code></label>
           <input
@@ -402,7 +407,7 @@ pnpm run socket</code></pre>
           ></textarea>
           <button type="button" id="btn-copy" class="secondary">Copy config</button>
           <p class="hint" style="margin-top: 10px">
-            Reload MCP servers, then connect in the Connection tab.
+            Restart your MCP client, then connect in the Connection tab.
           </p>
         </div>
         <div class="footer hint">
@@ -435,6 +440,7 @@ pnpm run socket</code></pre>
       const portInput = document.getElementById("port");
       const channelInput = document.getElementById("channel");
       const serverPathInput = document.getElementById("server-path");
+      const mcpClientInput = document.getElementById("mcp-client");
       const connectButton = document.getElementById("btn-connect");
       const connectionStatus = document.getElementById("connection-status");
 
@@ -944,23 +950,35 @@ pnpm run socket</code></pre>
         const channel = channelInput.value.trim() || DEFAULT_CHANNEL;
         // Explicit overrides keep this config in sync even if the server has saved settings.
         const env = { WS_PORT: String(port), WS_CHANNEL: channel };
+        const serverPath = (
+          serverPathInput.value.trim() || "/absolute/path/to/phoenix-figma-mcp/src/server.ts"
+        ).replace(/\\/g, "/");
 
         const mcpConfig = {
           mcpServers: {
             "phoenix-figma-mcp": {
               command: "node",
-              args: [
-                (
-                  serverPathInput.value.trim() ||
-                  "/absolute/path/to/phoenix-figma-mcp/src/server.ts"
-                ).replace(/\\/g, "/"),
-              ],
+              args: [serverPath],
               env,
             },
           },
         };
 
-        document.getElementById("mcp-json").value = JSON.stringify(mcpConfig, null, 2);
+        const isCodex = mcpClientInput.value === "codex";
+        document.getElementById("mcp-json").value = isCodex
+          ? [
+              "[mcp_servers.phoenix-figma-mcp]",
+              'command = "node"',
+              `args = [${JSON.stringify(serverPath)}]`,
+              "",
+              "[mcp_servers.phoenix-figma-mcp.env]",
+              `WS_PORT = ${JSON.stringify(env.WS_PORT)}`,
+              `WS_CHANNEL = ${JSON.stringify(env.WS_CHANNEL)}`,
+            ].join("\n")
+          : JSON.stringify(mcpConfig, null, 2);
+        document.getElementById("mcp-config-hint").textContent = isCodex
+          ? "Paste this into ~/.codex/config.toml, then restart Codex or its IDE extension."
+          : "Paste this into ~/.cursor/mcp.json, then reload MCP servers.";
         document.getElementById("connection-hint").textContent =
           port !== 3055
             ? "Custom ports must also be allowed in src/manifest.json. Copy the matching config from Setup."
@@ -970,6 +988,7 @@ pnpm run socket</code></pre>
       [portInput, channelInput, serverPathInput].forEach((input) => {
         input.addEventListener("input", updateMcpConfig);
       });
+      mcpClientInput.addEventListener("change", updateMcpConfig);
       updateConnectionStatus(false);
     </script>
   </body>

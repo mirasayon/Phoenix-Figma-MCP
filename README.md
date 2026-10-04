@@ -1,13 +1,13 @@
 # Phoenix Figma MCP
 
-Read and edit an open Figma file from Cursor or another MCP client through a local Figma plugin.
+Read and edit an open Figma file from Cursor, Codex or another MCP client through a local Figma plugin.
 No Figma API token is needed.
 
 ## Requirements
 
 - Node.js 24+ and pnpm (the version is pinned in `package.json`).
 - Figma Desktop.
-- Cursor or another MCP client with stdio support.
+- Cursor, Codex CLI / IDE extension, or another MCP client with stdio support.
 
 ## Setup
 
@@ -35,6 +35,12 @@ Keep the plugin panel open while you work.
 
 ### 3. Configure your MCP client
 
+Choose your client below. Replace the example path with the **absolute path** to `src/server.ts`.
+On Windows, use forward slashes, for example `C:/projects/phoenix-figma-mcp/src/server.ts`.
+The plugin's **Setup** tab can generate and copy the config for either Cursor or Codex.
+
+#### Cursor
+
 For Cursor, add this server to `~/.cursor/mcp.json`
 (on Windows: `%USERPROFILE%\.cursor\mcp.json`):
 
@@ -53,11 +59,33 @@ For Cursor, add this server to `~/.cursor/mcp.json`
 }
 ```
 
-Replace the example with the **absolute path** to `src/server.ts`.
-On Windows, use forward slashes, for example `C:/projects/phoenix-figma-mcp/src/server.ts`.
+Reload MCP servers or restart Cursor.
 
-Reload MCP servers or restart Cursor. The client starts the MCP server and joins
-`phoenix-figma` automatically. The plugin's **Setup** tab can generate and copy this config.
+#### Codex
+
+For Codex CLI or the IDE extension, add this to `~/.codex/config.toml`
+(on Windows: `%USERPROFILE%\.codex\config.toml`):
+
+```toml
+[mcp_servers.phoenix-figma-mcp]
+command = "node"
+args = ["/absolute/path/to/phoenix-figma-mcp/src/server.ts"]
+
+[mcp_servers.phoenix-figma-mcp.env]
+WS_PORT = "3055"
+WS_CHANNEL = "phoenix-figma"
+```
+
+Alternatively, register the same server with Codex CLI:
+
+```bash
+codex mcp add phoenix-figma-mcp --env WS_PORT=3055 --env WS_CHANNEL=phoenix-figma -- node "/absolute/path/to/phoenix-figma-mcp/src/server.ts"
+```
+
+Restart Codex or its IDE extension. In Codex CLI, use `/mcp` to check the active server.
+See the [official Codex MCP guide](https://developers.openai.com/codex/mcp) for more options.
+
+Both clients start the MCP server and join `phoenix-figma` automatically.
 
 ### 4. Use it
 
@@ -74,6 +102,10 @@ For later sessions, start `pnpm run socket`, run the plugin, and click **Connect
   client uses the same channel, or call `join_channel` with that name.
 - **MCP server missing:** check Node.js 24+, the absolute path in your MCP config, and the
   client's MCP logs; then reload the server.
+
+## License
+
+[MIT](LICENSE).
 
 Based on [cursor-talk-to-figma-mcp](https://github.com/sonnylazuardi/cursor-talk-to-figma-mcp)
 (MIT), adapted for Node.js.
